@@ -1,0 +1,22 @@
+# One command:  docker compose up --build     then open http://localhost:8501
+# First start downloads the model once (gemma4:e4b ≈ 9.6 GB). Set DATASAATHI_MODEL=gemma4:26b for the larger MoE model.
+services:
+  ollama:
+    image: ollama/ollama:latest
+    volumes: ["ollama:/root/.ollama"]
+    ports: ["11434:11434"]
+  pull-model:
+    image: ollama/ollama:latest
+    depends_on: [ollama]
+    environment: ["OLLAMA_HOST=http://ollama:11434"]
+    entrypoint: ["/bin/sh", "-c", "until ollama list >/dev/null 2>&1; do sleep 2; done; ollama pull ${DATASAATHI_MODEL:-gemma4:e4b}"]
+  app:
+    build: .
+    depends_on: [ollama]
+    ports: ["8501:8501"]
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - DATASAATHI_MODEL=${DATASAATHI_MODEL:-gemma4:e4b}
+      - DATASAATHI_DB=/data/datasaathi.duckdb
+    volumes: ["appdata:/data"]
+volumes: { ollama: {}, appdata: {} }

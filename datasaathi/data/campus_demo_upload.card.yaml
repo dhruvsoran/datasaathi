@@ -1,0 +1,15 @@
+name: Campus and hostel utilities, Oct 2025 to Sep 2026
+synthetic: true
+source: Synthetic sample created for the DataSaathi demo. Not official records.
+period: 2025-10 to 2026-09
+granularity: monthly
+entity_column: block
+time_column: month
+metrics:
+  electricity_kwh: {label: Electricity, unit: kWh}
+  water_kl: {label: Water, unit: kL}
+not_available:
+  - students / occupancy
+  - cost / tariff
+  - emission factor
+notes: Library has no reading for 2026-06 and Mess Hall has no water value for 2026-02 (deliberately left blank).

@@ -1,0 +1,24 @@
+DataSaathi: demo with your own CSV (upload campus_demo_upload.csv + campus_demo_upload.card.yaml)
+=================================================================================================
+Sidebar: choose "Upload my own CSV", upload the CSV, then the Data Card YAML.
+Expected on load: Data Trust ~98/100, Waste Radar 4 alerts (Hostel Block C water leak, Computer Centre vacation load).
+
+1. Which block used the most water last month?
+   -> Hostel Block C, 3,854 kL (about double the others: the planted leak).
+2. Compare water use in July and August
+   -> Hostel Block C shows the largest jump (the leak starts in August).
+3. Open the Waste Radar tab
+   -> Hostel Block C water spike in 2026-08 and 2026-09; Computer Centre stayed near full load in the June vacation (about 13,500 kWh extra).
+4. Computer Centre electricity trend
+   -> line chart; note it never dips in May and June like the others.
+5. What is the water use per student?
+   -> refusal: needs student headcount, which isn't in the data.
+6. Show electricity usage for Library in June 2026
+   -> refusal: missing observation (no Library reading for 2026-06).
+7. पिछले महीने सबसे ज्यादा पानी किस ब्लॉक ने इस्तेमाल किया?
+   -> Hindi question, same answer as question 1.
+
+What to say: "This file is new to the app. It had never seen these columns or block names. I only gave it a CSV
+and a short Data Card, and it found a likely water leak and a vacation energy problem on its own."
+
+All data is synthetic (labelled in the app). Numbers above were checked with the rule-based planner; Gemma 4 should give the same answers.

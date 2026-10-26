@@ -1,0 +1,18 @@
+name: Campus utilities — MESSY demo (data-quality test)
+synthetic: true
+source: Synthetic sample with deliberately planted errors (duplicate, typo, negative, missing). Not official records.
+period: 2025-04 to 2026-03
+granularity: monthly
+entity_column: building
+time_column: month
+metrics:
+  electricity_kwh: {label: Electricity, unit: kWh}
+  water_kl: {label: Water, unit: kL}
+not_available:
+  - students / occupancy
+  - floor area
+  - cost / tariff
+  - emission factor
+  - waste records
+  - weather
+notes: Planted errors for the Data Trust demo.
