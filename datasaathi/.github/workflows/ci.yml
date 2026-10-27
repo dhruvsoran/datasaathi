@@ -1,0 +1,16 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  eval-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11", cache: pip }
+      - run: pip install -r requirements.txt pytest
+      - name: 20-question eval set (rule-based planner, offline)
+        run: python evals/run_evals.py
+      - name: Held-out questions (rule-based planner)
+        run: python evals/run_evals.py --heldout
+      - name: Unit tests (Number Guard, Data Trust, Waste Radar, query log)
+        run: pytest -q tests

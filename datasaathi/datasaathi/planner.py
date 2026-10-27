@@ -9,6 +9,10 @@ from .lexicon import BILL_RE, LEX, find_native_months
 
 OLLAMA = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
 DEFAULT_MODEL = os.environ.get("DATASAATHI_MODEL", "gemma4:e4b")   # check `ollama list` for your exact tag
+# Gemma 4 "thinks" by default: a long hidden reasoning pass before every reply. The app never uses it (plans are JSON and
+# every number is checked by Number Guard), and it made each call ~7x slower (35 s -> 5 s per plan on a laptop GPU).
+THINK = os.environ.get("DATASAATHI_THINK", "0") == "1"
+KEEP_ALIVE = os.environ.get("DATASAATHI_KEEP_ALIVE", "30m")         # keep the model in memory between questions
 
 
 @dataclass
@@ -27,8 +31,20 @@ def ollama_models() -> list[str]:
         return []
 
 
+def ollama_warm(model: str) -> bool:
+    """Load the model into memory ahead of the first question (an empty request only loads it)."""
+    try:
+        req = urllib.request.Request(f"{OLLAMA}/api/generate", data=json.dumps({"model": model, "keep_alive": KEEP_ALIVE}).encode(),
+                                     headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=180) as r:
+            r.read()
+        return True
+    except Exception:
+        return False
+
+
 def ollama_chat(model: str, system: str, user: str, schema: dict | None = None, timeout: int = 120) -> str:
-    body = {"model": model, "stream": False, "options": {"temperature": 0},
+    body = {"model": model, "stream": False, "options": {"temperature": 0}, "think": THINK, "keep_alive": KEEP_ALIVE,
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
     if schema:
         body["format"] = schema
@@ -244,6 +260,20 @@ def repair_plan(plan: Plan, question: str, df: pd.DataFrame, card: Card) -> tupl
             setattr(plan, f, nv)
             notes.append(f"Repaired: normalised '{v}' to {nv}.")
     in_q = find_months(q, avail)
+    # "January" with no year: the model sometimes guesses a year outside the data (2025-01 when the data has 2026-01)
+    for f in ("month", "period_a", "period_b"):
+        v = getattr(plan, f)
+        if v and v not in avail and v[:4] not in q:
+            same = [m for m in in_q if m in avail and m[5:7] == v[5:7]]
+            if len(same) == 1:
+                setattr(plan, f, same[0])
+                notes.append(f"Repaired: the question gives no year and the data has no {v}; used {same[0]}.")
+    # two periods only mean something for a comparison ("which building jumped most from May to June?"); without the
+    # thinking pass the model sometimes labels that anomaly or trend while still filling both periods
+    if (plan.intent in ("anomaly", "trend") and plan.period_a and plan.period_b and plan.period_a != plan.period_b
+            and not _has(q, ["trend", "over the year", "over time", "pattern", "month by month", "monthly"])):
+        notes.append(f"Repaired: the plan names two periods ({plan.period_a}, {plan.period_b}), so it is a comparison, not {plan.intent}.")
+        plan.intent = "compare"
     if plan.intent in ("rank", "total") and not plan.month and in_q:
         plan.month = in_q[0]
         notes.append(f"Repaired: question names a month; set month to {in_q[0]}.")

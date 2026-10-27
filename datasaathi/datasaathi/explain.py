@@ -91,7 +91,8 @@ def gemma_explain(question: str, plan, r: Result, model: str = DEFAULT_MODEL) ->
     facts = {k: v for k, v in r.facts.items()}
     system = ("You are DataSaathi. Explain a computed result to a non-technical campus user in 2-3 short sentences. "
               "Use ONLY numbers that appear in FACTS or TABLE; never calculate new numbers, estimate or round differently. "
-              "Write digits 0-9. Answer in the same language and script as the question (English, Hindi or Hinglish). "
+              "Write digits 0-9. Answer in the same language and script as the QUESTION: an English question gets an English answer; "
+              "use Hindi or Hinglish only when the question itself is written in it. "
               "Mention one caveat if caveats are given. No bullet points.")
     user = (f"QUESTION: {question}\nUNIT: {r.unit}\nFACTS: {json.dumps(facts, default=str)}\n"
             f"TABLE: {r.table.head(10).to_json(orient='records')}\nCAVEATS: {json.dumps(r.caveats)}")

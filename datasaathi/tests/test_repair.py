@@ -45,3 +45,19 @@ def test_prompt_has_rules_and_examples():
 def test_unavailable_is_left_alone():
     p, n = repair_plan(Plan(intent="unavailable", missing_field="students"), "per student?", df, card)
     assert p.intent == "unavailable" and not n
+
+
+def test_two_periods_mean_compare():               # real Gemma (no thinking) failure: intent=anomaly with both periods
+    p, n = fix(Plan(intent="anomaly", metric="electricity_kwh", period_a="2025-05", period_b="2025-06"),
+               "Which building's electricity jumped most from May to June?")
+    assert p.intent == "compare" and n
+    p, _ = fix(Plan(intent="trend", metric="water_kl", entity="Cafeteria", period_a="2025-05", period_b="2025-06"),
+               "Cafeteria water usage trend")
+    assert p.intent == "trend"                     # the question asks for a trend: left alone
+
+
+def test_month_without_year_uses_the_one_in_the_data():   # real Gemma failure: January -> 2025-01 (data has 2026-01)
+    p, n = fix(Plan(intent="compare", metric="water_kl", period_a="2025-01", period_b="2025-02"), "Compare water between January and February")
+    assert (p.intent, p.period_a, p.period_b) == ("compare", "2026-01", "2026-02") and len(n) == 2
+    p, _ = fix(Plan(intent="total", metric="water_kl", month="2025-01"), "Total water in January 2025")
+    assert p.intent == "unavailable"               # the year was asked for explicitly: still an honest refusal
