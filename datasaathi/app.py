@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import pandas as pd
 import streamlit as st
-from datasaathi import data_trust, logs, ui, voice, waste_radar
+from datasaathi import data_trust, logs, suggest, ui, voice, waste_radar
 from datasaathi.card import infer_card, load_card, load_data
 from datasaathi.charts import make_chart
 from datasaathi.pipeline import answer
@@ -23,22 +23,9 @@ if show_intro:
     intro_slot.markdown(ui.intro(st.session_state["intro_n"]), unsafe_allow_html=True)
     st.session_state["intro_seen"] = True
 
-SUGGESTIONS = {
-    "Rank and compare": ["Which building used the most electricity last month?",
-                         "Compare electricity use in September and October",
-                         "Which building's water use dropped most from May to June?"],
-    "Trends and Indian languages": ["Cafeteria water usage trend",
-                                    "पिछले महीने सबसे ज्यादा बिजली किस बिल्डिंग ने इस्तेमाल की?",
-                                    "ગયા મહિને સૌથી વધુ વીજળી કઈ બિલ્ડિંગે વાપરી?",
-                                    "கடந்த மாதம் அதிக மின்சாரம் பயன்படுத்திய கட்டிடம் எது?",
-                                    "ਪਿਛਲੇ ਮਹੀਨੇ ਸਭ ਤੋਂ ਵੱਧ ਬਿਜਲੀ ਕਿਹੜੀ ਇਮਾਰਤ ਨੇ ਵਰਤੀ?"],
-    "Try to break it": ["What is the electricity use per student?",
-                        "Show electricity usage for Library in March 2026",
-                        "Is there any waste in water use?"],
-}
-GROUP_LOOK = {"Rank and compare": ("rank", ui.AMBER, ":material/leaderboard:"),
-              "Trends and Indian languages": ("globe", ui.TEAL, ":material/translate:"),
-              "Try to break it": ("flask", ui.CORAL, ":material/science:")}
+GROUP_LOOK = {"Rank and compare": ("rank", ui.AMBER, ":material/leaderboard:"),     # suggestions are written from the loaded data
+              "Trends and totals": ("trend", ui.TEAL, ":material/show_chart:"),
+              "In your language": ("globe", ui.VIOLET, ":material/translate:")}
 
 @st.cache_resource(show_spinner=False)
 def warm_model(name: str):
@@ -80,16 +67,19 @@ with st.sidebar:
         st.markdown('<span class="chip lite">Lite mode</span>', unsafe_allow_html=True)
         st.caption("Gemma 4 was not found on this machine, so questions are planned by the built-in rule-based planner (English, Hindi and "
                    "eight other Indian languages for common phrasings). To enable Gemma 4: `ollama pull gemma4:e4b`, then refresh.")
-    st.markdown(ui.side_h("mic", "Voice"), unsafe_allow_html=True)
-    voice_lang = st.selectbox("Spoken language", list(voice.STT_LANGUAGES), help="Pick the language you will speak, or Auto-detect.")
-    if voice.available():
-        warm_voice()
     st.markdown(ui.side_h("spark", "Experience"), unsafe_allow_html=True)
     if st.button("Replay welcome intro", width="stretch", icon=":material/replay:"):
         st.session_state["intro_seen"] = False
         st.session_state["hero_seen"] = False
         st.rerun()
     st.markdown(ui.side_foot(), unsafe_allow_html=True)
+
+# spoken language for voice notes: a small pill fixed at the top-right corner (drawn on every run, so nothing below shifts)
+with st.container(key="lang_corner"):
+    st.markdown(ui.lang_label(), unsafe_allow_html=True)
+    voice_lang = st.selectbox("Spoken language", list(voice.STT_LANGUAGES), key="voice_lang", label_visibility="collapsed")
+if voice.available():
+    warm_voice()
 
 
 @st.cache_data(show_spinner=False)
@@ -157,6 +147,8 @@ animate_hero = not st.session_state.get("hero_seen")      # count-up and entranc
 st.session_state["hero_seen"] = True
 st.markdown(ui.hero(card.name, card.synthetic, card.period, trust.overall, findings, mode_text, bool(use_gemma), kpis=campus_kpis(df, card),
                     animate=animate_hero, delay=4.4 if show_intro else 0.0), unsafe_allow_html=True)
+with st.container(key="goto_js"):          # hidden: lets the Data Trust and Waste Radar cards open their tabs
+    st.iframe(ui.goto_script(), height=1)
 st.session_state.setdefault("history", [])
 
 
@@ -219,7 +211,7 @@ with tab_ask:
     # a new key after every answer: Streamlit would otherwise keep the panel open, showing the suggestions again above the answer
     with st.expander("Suggested questions" if not history else "Ask something else", expanded=not history, icon=":material/lightbulb:",
                      key=f"suggest{len(history)}"):
-        for gi, (label, items) in enumerate(SUGGESTIONS.items()):
+        for gi, (label, items) in enumerate(suggest.suggestions(df, card).items()):
             ic, col, mat = GROUP_LOOK[label]
             st.markdown(ui.group_label(ic, label, col), unsafe_allow_html=True)
             per_row = 3
@@ -268,8 +260,8 @@ with tab_ask:
             scroll_to(".st-key-latest .ask-bubble", "start")
     else:
         st.markdown(ui.empty_state("Pick a question above, speak, or type your own.",
-                                   "Try one from “Try to break it” to see what happens when the data cannot answer: the app refuses instead of guessing.",
-                                   "chat"), unsafe_allow_html=True)
+                                   "The suggestions are written from your data. If a question needs something the file does not have, "
+                                   "the app says so instead of guessing.", "chat"), unsafe_allow_html=True)
 
 # ---------------- Waste Radar ----------------
 with tab_radar:

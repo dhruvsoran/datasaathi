@@ -19,7 +19,7 @@ html, body, .stApp { font-family:var(--body); color:var(--ink); }
 /* mixed "dusk" theme: a lighter slate-indigo canvas, bright glass cards, and a deep navy sidebar for contrast */
 .stApp { background:linear-gradient(165deg,#24345E 0%,#1B2846 38%,#1E2C50 70%,#2A3466 100%); background-attachment:fixed; isolation:isolate; }
 ::selection { background:rgba(46,230,197,.32); }
-.block-container { padding-top:1.3rem; max-width:1240px; }
+.block-container { padding-top:4.3rem; max-width:1240px; }   /* room for the spoken-language pill at the top right */
 h1,h2,h3,h4 { font-family:var(--display); letter-spacing:-0.02em; color:var(--ink); }
 
 /* aurora: three soft light sources drifting slowly behind everything, plus film grain */
@@ -541,3 +541,29 @@ div[data-testid="stButton"] > button[kind="primary"]::before { background:rgba(2
 [class*="st-key-vnote_"] audio { width:100%; height:38px; }
 .ask-bubble.voice .av { background:linear-gradient(135deg,var(--wa),var(--wa-d)); color:#fff; }
 .ask-bubble .l svg { width:12px; height:12px; vertical-align:-1px; margin-right:.3rem; }
+
+/* ============ clickable deck cards: Data Trust and Waste Radar open their tabs ============ */
+.inst.go { cursor:pointer; outline:none; }
+.inst.go:hover, .inst.go:focus-visible { border-color:rgba(46,230,197,.55); box-shadow:0 26px 60px rgba(0,0,0,.45), 0 0 0 1px rgba(46,230,197,.25), 0 0 34px rgba(46,230,197,.18); transform:translateY(-4px); }
+.inst.go:active { transform:translateY(-1px) scale(.99); }
+.inst .open { display:inline-flex; align-items:center; gap:.35rem; margin-top:.3rem; padding:.22rem .7rem; border-radius:999px; font-size:.74rem; font-weight:600;
+  color:var(--teal); background:rgba(46,230,197,.10); border:1px solid rgba(46,230,197,.28); opacity:.75; transition:opacity .2s, background .2s, gap .2s; }
+.inst .open svg { width:13px; height:13px; }
+.inst.go:hover .open, .inst.go:focus-visible .open { opacity:1; background:rgba(46,230,197,.18); gap:.55rem; }
+[data-testid="stTabs"] { scroll-margin-top:70px; }
+
+/* ============ spoken language: a pill fixed at the top-right corner ============ */
+.st-key-lang_corner { position:fixed !important; top:.55rem; right:1rem; z-index:1000000; width:auto !important; flex-direction:row !important;
+  align-items:center; gap:.45rem !important; padding:.25rem .3rem .25rem .8rem; border-radius:999px;
+  background:rgba(16,26,52,.82); border:1px solid rgba(46,230,197,.32); backdrop-filter:blur(14px); box-shadow:0 10px 28px rgba(0,0,0,.35); }
+.st-key-lang_corner > div { width:auto !important; margin:0 !important; }
+.st-key-lang_corner [data-testid="stElementContainer"] { width:auto !important; }
+.lang-pill { display:flex; align-items:center; gap:.4rem; color:var(--muted); font-size:.78rem; font-weight:600; white-space:nowrap; }
+.lang-pill svg { width:15px; height:15px; color:#25D366; }
+.st-key-lang_corner [data-testid="stSelectbox"] { width:150px !important; }
+.st-key-lang_corner [data-baseweb="select"] > div, .st-key-lang_corner [data-testid="stSelectbox"] [role="group"] { min-height:34px !important; border-radius:999px !important; background:rgba(255,255,255,.06) !important;
+  border-color:rgba(255,255,255,.14) !important; font-size:.85rem; }
+@media (max-width:560px) { .st-key-lang_corner { top:.45rem; right:.5rem; } .lang-pill span { display:none; }
+  .st-key-lang_corner [data-testid="stSelectbox"] { width:142px !important; } }
+.st-key-goto_js { height:0 !important; min-height:0 !important; overflow:hidden; margin:0 !important; padding:0 !important; gap:0 !important; }
+.st-key-goto_js iframe { height:0 !important; border:0; }

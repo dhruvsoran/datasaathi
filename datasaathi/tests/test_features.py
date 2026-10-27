@@ -213,3 +213,26 @@ def test_real_audio_path_reaches_whisper_vad_without_error():
     from datasaathi import voice
     a = voice.wav_to_audio(_wav(48000, 1, 2.0))
     get_speech_timestamps(a, VadOptions())              # raises if the array is the wrong type or shape
+
+
+def test_suggestions_are_written_from_the_loaded_data():
+    import io
+    import pandas as pd
+    from datasaathi.card import infer_card
+    from datasaathi.suggest import suggestions
+    df, card = ds("campus_utilities")
+    groups = suggestions(df, card)
+    assert "Try to break it" not in groups and set(groups) == {"Rank and compare", "Trends and totals", "In your language"}
+    assert any("2026" in q for q in groups["Rank and compare"])                      # the file's own months
+    assert any(q.startswith(str(n)) for n in df[card.entity_column].unique() for q in groups["Trends and totals"])
+    # an unrelated CSV without a Data Card: its own words, no electricity/water questions in Indian languages
+    rows = [f"Ward {w},2024-{m:02d},{40 + w * 7 + m},{w + m % 3}" for w in range(1, 5) for m in range(1, 13)]
+    csv = "ward_name,month,garbage_tonnes,complaints\n" + "\n".join(rows)
+    card2 = infer_card(pd.read_csv(io.StringIO(csv)))
+    df2 = load_data(io.StringIO(csv), card2)
+    g2 = suggestions(df2, card2)
+    qs = [q for v in g2.values() for q in v]
+    assert "In your language" not in g2 and any("ward" in q and "garbage" in q for q in qs) and any("December 2024" in q for q in qs)
+    for q in qs:                                                                      # every suggestion is answerable from that file
+        a = answer(q, df2, card2, use_gemma=False)
+        assert a.status == "answered", q

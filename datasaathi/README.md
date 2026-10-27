@@ -104,7 +104,7 @@ The Docker files are provided but have not been tested end to end by the author.
 4. **Unavailable statistic.** *What is the electricity use per student?* The app refuses: there is no headcount in the data.
 5. **Missing observation.** *Show electricity usage for Library in March 2026.*
 6. **Indian languages.** *पिछले महीने सबसे ज्यादा बिजली किस बिल्डिंग ने इस्तेमाल की?* (Hindi), or the Gujarati, Tamil and Punjabi suggestions. Or tap the green **mic** in the question bar and speak.
-7. **Unasked problems.** *Is there any waste in water use?* or open the **Waste Radar** tab. Girls Hostel stays near full load in the June vacation.
+7. **Unasked problems.** *Is there any waste in water use?* or click the **Waste Radar** card at the top (or its tab). Girls Hostel stays near full load in the June vacation.
 8. **Bad data.** Switch to *Messy demo* and watch the Data Trust score fall and answers carry warnings.
 9. **New data.** Choose *Upload my own CSV* and upload `data/campus_demo_upload.csv` with `data/campus_demo_upload.card.yaml`. It has different columns and names, and a hidden water leak. Questions are in `docs/UPLOAD_DEMO_QUESTIONS.txt`.
 
@@ -145,7 +145,7 @@ The Docker files are provided but have not been tested end to end by the author.
 pip install -r requirements-voice.txt                    # optional; the Colab notebook does this for you
 DATASAATHI_STT_MODEL=small streamlit run app.py          # tiny/base for small laptops, small/medium for better Indian-language accuracy
 ```
-Choose the language you will speak in the sidebar (or leave it on Auto-detect). Microphone access works on `localhost` and `https` links (including the Colab tunnel link).
+Choose the language you will speak in the **Speak in** pill at the top-right corner (or leave it on Auto-detect). Microphone access works on `localhost` and `https` links (including the Colab tunnel link).
 
 Limits, stated plainly: the keyword lists were written carefully but are not reviewed by native speakers; speech accuracy varies by language and model size; building names spoken in a non-Latin script may not match the English names in the data unless Gemma 4 maps them; and the voice path was tested with a stand-in model, not yet with real recordings.
 
@@ -203,6 +203,7 @@ Each question replaces the previous answer on the Ask tab, so the page stays sho
 - every answer as a card with a rotating **Number Guard seal** (green when every figure was verified, red when the app refused), the five-step pipeline trace, a restyled chart (shaded ranking bars, a smooth trend with the peak marked) and the printed **Proof Receipt** with a VERIFIED / REFUSED stamp;
 - incident cards in Waste Radar (actual against expected), ring gauges and an issue timeline in Data Trust, a question timeline in History;
 - the page **scrolls itself** to the running analysis when you ask, and to the answer when it is ready;
+- the **Data Trust** and **Waste Radar** cards in the deck are clickable and open their tabs;
 - **voice like WhatsApp**: a green mic in the question bar; record, ✓ to send or ✕ to delete; a loader while speech becomes text; then your question shows as a voice-note bubble you can replay, and the answer follows.
 
 On first open, a short **welcome curtain** ("HACKTOBER | FEST" written across two curtains that part to reveal the app) plays once per session and covers the whole window, sidebar included. Add `?intro=0` to the address to skip it, or press **Replay welcome intro** in the sidebar.
@@ -279,6 +280,8 @@ metrics:
 not_available: [students / occupancy, cost / tariff]   # what the dataset does NOT contain
 ```
 Data is treated as monthly. Daily readings should be summed to months first. Without a Data Card the app builds a basic one and warns that the source is not verified.
+
+**Suggested questions follow your file** (`datasaathi/suggest.py`). They are written from the loaded data: its own name column ("Which *block* used the most electricity last month?"), its metrics, its latest months ("Compare electricity in August 2026 and September 2026"), its biggest user ("Main Academic Building electricity trend") and another of its names for an average. Questions in Hindi, Gujarati, Tamil and Punjabi appear only when the file has electricity or water columns, which those phrasings cover. Every suggestion is checked in the tests to be answerable from the file it was written for.
 
 ---
 
