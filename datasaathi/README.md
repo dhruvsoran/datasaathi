@@ -2,7 +2,7 @@
 
 **Ask your community data in plain language. Get answers you can check.**
 
-[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/dhruvsoran/datasaathi/blob/main/notebooks/DataSaathi_Colab.ipynb)
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/dhruvsoran/datasaathi/blob/main/datasaathi/notebooks/DataSaathi_Colab.ipynb)
 ![License](https://img.shields.io/badge/license-Apache--2.0-blue)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![Model](https://img.shields.io/badge/model-Gemma%204-0F6E7A)
@@ -10,7 +10,7 @@
 Hacktoberfest Hackday 2026 · PS 03 *Community and Environmental Data Intelligence* · Track 1 *Best Use of Gemma 4*
 Built by Dhruv Soran, IIMT University, Meerut
 
-![DataSaathi home screen](docs/screenshots/home.png)
+![DataSaathi home screen: command deck with the Data Trust gauge, Waste Radar scope and campus totals](docs/screenshots/home.jpg)
 
 DataSaathi lets anyone ask questions about campus electricity and water data by **typing or speaking**, in **English or nine Indian languages** (Hindi, Gujarati, Tamil, Punjabi, Marathi, Bengali, Telugu, Kannada, Malayalam).
 
@@ -20,6 +20,8 @@ DataSaathi lets anyone ask questions about campus electricity and water data by 
 4. **Number Guard** blocks any figure in the model's wording that the code did not compute.
 5. **Waste Radar** finds problems nobody asked about, and the **Data Trust check** says how reliable the data is.
 6. When the data cannot answer, it **refuses instead of guessing**.
+
+**Latest update:** a redesigned interface (see [Screenshots](#screenshots)), answers in about 10 seconds instead of 2 to 3 minutes on a laptop GPU (see [Speed](#speed)), two more logged plan repairs, and a fix for uploading a CSV without a Data Card.
 
 ---
 
@@ -31,6 +33,7 @@ DataSaathi lets anyone ask questions about campus electricity and water data by 
 - [Screenshots](#screenshots)
 - [How it works](#how-it-works)
 - [Choosing a Gemma 4 model](#choosing-a-gemma-4-model)
+- [Speed](#speed)
 - [Verify the numbers](#verify-the-numbers)
 - [Bring your own data](#bring-your-own-data)
 - [Troubleshooting](#troubleshooting)
@@ -150,17 +153,23 @@ Limits, stated plainly: the keyword lists were written carefully but are not rev
 
 ## Screenshots
 
-| Answer, pipeline trace and chart | Proof Receipt, code and rows |
+All captured from the running app with Gemma 4 (`gemma4:e4b`) connected, on the synthetic sample data.
+
+| Answer: Number Guard seal, five-step trace and chart | Proof Receipt, the code that ran and the rows used |
 |---|---|
-| ![answer](docs/screenshots/ask-answer.png) | ![receipt](docs/screenshots/receipt.png) |
-| **Waste Radar** | **Data Trust** |
-| ![radar](docs/screenshots/waste-radar.png) | ![trust](docs/screenshots/data-trust.png) |
+| ![Answer card with the verified seal, pipeline trace and ranking chart](docs/screenshots/ask-answer.jpg) | ![Printed proof receipt with VERIFIED stamp, code and rows](docs/screenshots/receipt.jpg) |
+| **Refusal: no headcount in the data, so no guess** | **Voice: speak, check the text, press Send** |
+| ![Refused answer with the red seal and a REFUSED receipt](docs/screenshots/refusal.jpg) | ![Voice panel with the recorder above the question box](docs/screenshots/voice.jpg) |
+| **Waste Radar: problems nobody asked about** | **Data Trust: how reliable the file is** |
+| ![Radar scope and an incident card, actual against expected](docs/screenshots/waste-radar.jpg) | ![Ring gauges per metric and the issue timeline](docs/screenshots/data-trust.jpg) |
+| **History: every question this session** | **Welcome curtain (plays once, `?intro=0` skips it)** |
+| ![Question timeline with answered and refused dots](docs/screenshots/history.jpg) | ![HACKTOBER FEST curtain](docs/screenshots/intro.jpg) |
 
-The welcome curtain, mid-opening:
+On a phone the deck stacks into single cards:
 
-![welcome curtain](docs/screenshots/intro.png)
+<img src="docs/screenshots/mobile.jpg" alt="Phone layout of the home screen" width="300">
 
-Captured in lite mode with the rule-based planner. With Gemma 4 running, the banner shows `Gemma 4 · gemma4:e4b` with a live indicator.
+Motion does not show in stills: the Data Trust gauge is filled with a moving liquid up to its score, gooey blobs drift behind the headline, waves roll along the panels, the radar sweeps, buttons fill with liquid on hover and answers drop in with a small bounce.
 
 ---
 
@@ -183,15 +192,22 @@ question ─► Gemma 4 plan (JSON) ─► validate against Data Card ─► whi
 | Number Guard | Every number in model text must exist in the computed output, else a verified template answer is shown | `explain.py` |
 | Waste Radar | Compares each building with its own history and the campus-wide pattern; flags unusual readings | `waste_radar.py` |
 | Data Trust | Completeness, month gaps, duplicates, impossible values, likely typos, a 0 to 100 score | `data_trust.py` |
-| Interface | Streamlit app, dark theme and animated components | `app.py`, `ui.py`, `theme.css`, `charts.py`, `.streamlit/config.toml` |
+| Interface | Streamlit app: command deck, answer cards, charts, receipt, auto-scroll, voice panel | `app.py`, `ui.py`, `theme.css`, `charts.py`, `.streamlit/config.toml` |
 | Languages and voice | Indian-language vocabulary, answer translation, speech to text | `lexicon.py`, `localize.py`, `voice.py` |
 | Query log | Local DuckDB file and History tab | `logs.py` |
 
 Each question replaces the previous answer on the Ask tab, so the page stays short; earlier answers are one click away in the **History** tab.
 
-On first open, a short **welcome curtain** ("HACKTOBER | FEST" written across two curtains that part to reveal the app) plays once per session. Add `?intro=0` to the address to skip it, or press **Replay welcome intro** in the sidebar. A **liquid motion** layer (drifting gooey blobs and slow waves in the banner, buttons that fill like liquid on hover, answers that drop in with a small bounce) runs in the background. Both are pure CSS and are switched off automatically for visitors who ask their system for reduced motion.
+**The interface ("data observatory").** A dusk-blue canvas with soft aurora light, frosted-glass panels and instruments instead of plain numbers:
+- a **command deck** at the top: Data Trust as a ring gauge, Waste Radar as a rotating scope with one blip per alert, and campus totals for the latest month with the change against the month before and a 12-month sparkline (pandas sums of the loaded file);
+- every answer as a card with a rotating **Number Guard seal** (green when every figure was verified, red when the app refused), the five-step pipeline trace, a restyled chart (shaded ranking bars, a smooth trend with the peak marked) and the printed **Proof Receipt** with a VERIFIED / REFUSED stamp;
+- incident cards in Waste Radar (actual against expected), ring gauges and an issue timeline in Data Trust, a question timeline in History;
+- the page **scrolls itself** to the running analysis when you ask, and to the answer when it is ready;
+- **voice**: record, a loader shows while speech is turned into text, then check the text and press **Send**.
 
-The interface uses CSS animation only (count-ups, a pipeline trace, a receipt that prints out) and respects the reduced-motion setting.
+On first open, a short **welcome curtain** ("HACKTOBER | FEST" written across two curtains that part to reveal the app) plays once per session and covers the whole window, sidebar included. Add `?intro=0` to the address to skip it, or press **Replay welcome intro** in the sidebar.
+
+All motion is CSS (no JavaScript animation libraries) and is switched off automatically for visitors who ask their system for reduced motion. The redesign changed only the visual layer; the design notes are in [docs/UI_REDESIGN_PLAN.md](docs/UI_REDESIGN_PLAN.md).
 
 ---
 
@@ -209,6 +225,28 @@ Choose a model in the sidebar, or run `DATASAATHI_MODEL=gemma4:12b streamlit run
 
 ---
 
+## Speed
+
+Gemma 4 has a **thinking** mode that is on by default in Ollama: before every reply it writes a long hidden chain of reasoning. DataSaathi never shows or uses it (plans are JSON, and Number Guard checks every figure), so the app turns it off and keeps the model loaded:
+
+| Setting (`datasaathi/planner.py`) | Default | What it does |
+|---|---|---|
+| `DATASAATHI_THINK` | `0` | `think: false` on every Gemma call. Set `1` to turn thinking back on |
+| `DATASAATHI_KEEP_ALIVE` | `30m` | how long Ollama keeps the model in memory between questions (Ollama's own default is 5 minutes) |
+| warm-up | on | the model is loaded in the background when the app starts, so the first question does not wait for it |
+
+Measured on a Windows 11 laptop (RTX 3050 Laptop GPU, 4 GB; 16 GB RAM; `gemma4:e4b` through Ollama):
+
+| | Thinking on (before) | Thinking off (now) |
+|---|---|---|
+| One planning call | about 35 s | about 5 s |
+| One answer (plan + explanation) | 2 to 3 minutes | about 9 to 11 s |
+| 20-question evaluation (`--gemma`) | not run in full (about an hour) | 181 s, **20/20** |
+
+Without its reasoning pass the small model slips a little more often, so two more **logged repairs** were added (each one shows in the Proof Receipt and has a test in `tests/test_repair.py`): a plan that names two periods but says "anomaly" or "trend" becomes a comparison ("Which building's electricity jumped most from May to June?"), and a month with no year in the question is mapped to the one the data has ("January" means 2026-01 here, not 2025-01). Explanations are also told plainly to answer an English question in English.
+
+---
+
 ## Verify the numbers
 
 ```bash
@@ -219,6 +257,8 @@ pytest -q tests                              # Number Guard, plan repair, Data T
 ```
 
 What we measured: with Gemma 4 (`gemma4:e4b` on a Colab T4) the main set first scored 11/20. After adding the validation and repair step and prompt examples it scored 20/20. The held-out set exists so you can check for overfitting; run it with `--gemma` and judge for yourself. GitHub Actions runs the offline evaluations and tests on every push.
+
+With thinking off (laptop, see [Speed](#speed)): two runs before the new repairs scored 19/20 and 18/20; with them the main set scored **20/20** and the held-out set **9/10**. The one held-out miss ("Compare water between January and February" read as January 2025) is the case the month repair now fixes; it is covered by a unit test, but the held-out set has not been re-run through Gemma since. The rule-based planner scores 20/20, and `pytest` runs 45 tests.
 
 ---
 
@@ -250,7 +290,8 @@ Data is treated as monthly. Daily readings should be summed to months first. Wit
 | `pip` or `python` not found (Windows) | Reinstall Python and tick "Add to PATH", then reopen PowerShell |
 | `Activate.ps1 cannot be loaded` | Run `Set-ExecutionPolicy -Scope Process Bypass` first |
 | Port 8501 is busy | `streamlit run app.py --server.port 8502` |
-| Gemma 4 is very slow or runs out of memory | Use `gemma4:e2b`, close other applications, or use Colab |
+| Gemma 4 is very slow or runs out of memory | The app already turns off Gemma 4's hidden "thinking" pass and keeps the model loaded for 30 minutes (see [Speed](#speed)). If it is still slow, use `gemma4:e2b`, close other applications, or use Colab |
+| Uploading a CSV shows an error | The file needs one column of names, one month or date column and at least one numeric column. Add a Data Card YAML to name the columns yourself |
 | Colab shows no link | Re-run the last cell, or run `!tail -5 /tmp/cf.log` to see why |
 | Colab says no GPU | Runtime → Change runtime type → T4 GPU, then reconnect |
 | Welcome curtain is in the way | Add `?intro=0` to the address (for example `http://localhost:8501/?intro=0`), or use it once and it will not return in that session |
@@ -268,7 +309,7 @@ Data is treated as monthly. Daily readings should be summed to months first. Wit
 - Waste Radar thresholds are simple statistical rules tuned on the sample. Treat flags as leads to check, not proof of waste. It needs several buildings (3 or more) and at least 6 months to compare.
 - Each question is independent (no follow-up memory yet), and one question maps to one plan.
 - Indian-language quality depends on the Gemma 4 model you run. The rule-based fallback covers common phrasings only, and its word lists have not been reviewed by native speakers.
-- Tested: Gemma 4 `e4b` on a Colab T4, and lite mode on Linux with Python 3.12 (including the nine-language keyword tests). Not tested: Docker, Windows and macOS installs, other Gemma 4 sizes, and voice input with real recordings.
+- Tested: Gemma 4 `e4b` on a Colab T4; lite mode on Linux with Python 3.12 (including the nine-language keyword tests); and a Windows 11 install with Python 3.11, pandas 3.1, Streamlit 1.66 and `gemma4:e4b` on a 4 GB laptop GPU. Voice was tested end to end with a synthetic spoken recording (Windows text-to-speech), not yet with many real voices. Not tested: Docker, macOS, other Gemma 4 sizes.
 - Not benchmarked on large datasets. The brief asks for small ones.
 - Documents and images as inputs, and scenario comparisons, are not built.
 

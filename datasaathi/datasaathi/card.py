@@ -26,10 +26,15 @@ def load_card(text: str) -> Card:
 
 def infer_card(df: pd.DataFrame, name: str = "Uploaded dataset") -> Card:
     """Minimal card for a CSV uploaded without one. Provenance stays unverified."""
-    text_cols = [c for c in df.columns if df[c].dtype == object]
-    time_col = next((c for c in df.columns if any(k in c.lower() for k in ("month", "date", "period"))), text_cols[-1])
-    entity_col = next(c for c in text_cols if c != time_col)
-    nums = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
+    # any non-numeric column is text: pandas 2 reads text as `object`, pandas 3 as the new `str` dtype
+    text_cols = [c for c in df.columns if not pd.api.types.is_numeric_dtype(df[c])]
+    time_col = next((c for c in df.columns if any(k in str(c).lower() for k in ("month", "date", "period"))),
+                    text_cols[-1] if text_cols else None)
+    entity_col = next((c for c in text_cols if c != time_col), None)
+    nums = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c]) and c not in (time_col, entity_col)]
+    if time_col is None or entity_col is None or not nums:
+        raise ValueError("Could not work out the columns of this CSV. It needs one column of names (buildings, wards, plants), "
+                         "one month or date column, and at least one numeric column. Add a Data Card YAML to name them.")
     return Card(name=name, synthetic=False, source="User-uploaded file; provenance NOT verified", period="see data",
                 entity_column=entity_col, time_column=time_col,
                 metrics={c: {"label": c.replace("_", " ").title(), "unit": ""} for c in nums},

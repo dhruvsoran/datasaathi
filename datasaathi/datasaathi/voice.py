@@ -14,6 +14,8 @@ STT_LANGUAGES = {"Auto-detect": None, "English": "en", "Hindi": "hi", "Gujarati"
 _model = None
 _device = "cpu"
 TARGET_RATE = 16000
+SILENT_PEAK = 0.001          # below this the browser sent silence (muted or wrong microphone), not quiet speech
+LAST_RECORDING = os.path.join(tempfile.gettempdir(), "datasaathi_last_recording.wav")   # kept for troubleshooting
 
 
 def available() -> bool:
@@ -80,6 +82,20 @@ def wav_to_audio(data: bytes, target: int = TARGET_RATE) -> np.ndarray:
             n_out = int(len(a) * target / rate)
             a = np.interp(np.linspace(0, len(a) - 1, n_out), np.arange(len(a)), a).astype(np.float32)
     return np.ascontiguousarray(a, dtype=np.float32)
+
+
+def level(audio_bytes: bytes) -> tuple[float, float] | None:
+    """(seconds, peak 0..1) of a WAV recording, or None if it is not a plain WAV. Also saves it to LAST_RECORDING."""
+    try:
+        with open(LAST_RECORDING, "wb") as f:
+            f.write(audio_bytes)
+    except OSError:
+        pass
+    try:
+        a = wav_to_audio(audio_bytes)
+    except (wave.Error, EOFError, ValueError):
+        return None
+    return len(a) / TARGET_RATE, float(np.abs(a).max()) if len(a) else 0.0
 
 
 def _run(m, audio, language):

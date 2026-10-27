@@ -181,6 +181,30 @@ def test_voice_transcribe_with_injected_model():
     assert set(voice.STT_LANGUAGES.values()) >= {"hi", "gu", "ta", "pa", "mr", "bn", "te", "kn", "ml", "en"}
 
 
+def test_upload_without_card_infers_columns_on_any_pandas():
+    import pandas as pd
+    import pytest
+    from datasaathi.card import infer_card
+    raw = pd.read_csv(ROOT / "data/campus_demo_upload.csv")        # pandas 3 reads text as `str`, pandas 2 as `object`
+    c = infer_card(raw)
+    assert (c.entity_column, c.time_column, list(c.metrics)) == ("block", "month", ["electricity_kwh", "water_kl"])
+    with pytest.raises(ValueError):
+        infer_card(pd.DataFrame({"a": [1, 2], "b": [3, 4]}))       # no name or month column: a clear error, not IndexError
+
+
+def test_silent_recording_is_detected():
+    import io, wave
+    from datasaathi import voice
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as w:
+        w.setnchannels(1); w.setsampwidth(2); w.setframerate(48000)
+        w.writeframes(b"\x00\x00" * 96000)                      # 2 s of digital silence (muted microphone)
+    secs, peak = voice.level(buf.getvalue())
+    assert abs(secs - 2.0) < 0.01 and peak < voice.SILENT_PEAK
+    assert voice.level(_wav())[1] > voice.SILENT_PEAK
+    assert voice.level(b"not a wav") is None
+
+
 def test_real_audio_path_reaches_whisper_vad_without_error():
     """Runs faster-whisper's own voice-activity detector on a decoded recording (needs faster-whisper installed)."""
     import pytest
