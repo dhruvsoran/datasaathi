@@ -35,6 +35,7 @@ _ICONS = {
     "list": "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
     "receipt": "M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2zM9 8h6M9 12h6",
     "rank": "M4 20V10M10 20V4M16 20v-7M22 20H2",
+    "arrow": "M5 12h14M13 6l6 6-6 6",
 }
 
 
@@ -184,12 +185,13 @@ def hero(card_name: str, synthetic: bool, period: str, trust: int, findings, mod
              '<p>Gemma 4 understands the question. Code does the maths. Every answer ships with the code, the rows and a proof receipt.</p>'
              f'<div class="chips"><span class="chip info">{icon("layers")}{e(card_name)}</span>'
              f'<span class="chip info">{icon("history")}{e(period)}</span>{syn}{mchip}</div></div>')
-    gauge = ('<div class="glass inst" style="--i:1" title="Computed live from the loaded dataset: completeness, month gaps, duplicates, impossible values '
-             f'and likely typos. A different file gives a different score."><div class="k">Data trust</div>{ring(trust)}'
-             f'<div class="s">{trust_note}</div></div>')
-    radar = ('<div class="glass inst" style="--i:2" title="Statistical check of every building against its own history and the campus-wide pattern.">'
+    gauge = ('<div class="glass inst go" data-goto="Data Trust" role="button" tabindex="0" style="--i:1" title="Open the Data Trust tab: '
+             f'completeness, month gaps, duplicates, impossible values and likely typos, computed from the loaded file."><div class="k">Data trust</div>{ring(trust)}'
+             f'<div class="s">{trust_note}</div><div class="open">Open Data Trust {icon("arrow")}</div></div>')
+    radar = ('<div class="glass inst go" data-goto="Waste Radar" role="button" tabindex="0" style="--i:2" title="Open the Waste Radar tab: every building '
+             'checked against its own history and the campus-wide pattern.">'
              f'<div class="k">Waste radar</div>{scope(findings)}'
-             f'<div class="s">{radar_note}</div></div>')
+             f'<div class="s">{radar_note}</div><div class="open">Open Waste Radar {icon("arrow")}</div></div>')
     strip = f'<div class="kpis">{"".join(kpi_tile(k, j) for j, k in enumerate(kpis or []))}</div>' if kpis else ""
     return f'<div class="deck{"" if animate else " still"}" style="--d0:{delay}s">{title}{gauge}{radar}{strip}</div>'
 
@@ -318,6 +320,29 @@ def scroll_script(selector: str, block: str = "start", nonce: int = 0) -> str:
             f'el.scrollIntoView({{behavior:"smooth",block:{block!r}}});'
             f'setTimeout(function(){{if(Math.abs(el.getBoundingClientRect().top-y0)<2)el.scrollIntoView({{block:{block!r}}});}},700);}}}},100);}})();</script>'
             f'<!-- {nonce} -->')
+
+
+def goto_script() -> str:
+    """Installed once per page in a hidden iframe: a click (or Enter / Space) on an element with data-goto="Tab name" opens that tab
+    and brings the tab bar to the top. The bar is re-checked a few times because the newly shown tab can still be drawing (charts)
+    and push the page while it scrolls. Fixed text from our code; it only reads the page and clicks the tab button."""
+    return ("<script>(function(){const w=window.parent,d=w.document;if(w.__dsGoto)return;w.__dsGoto=true;"
+            "function scroller(){return d.querySelector('[data-testid=stMain]')||d.scrollingElement;}"
+            "function go(card){const name=card.getAttribute('data-goto');"
+            "const tab=[...d.querySelectorAll('[role=tab]')].find(function(t){return t.innerText.indexOf(name)>-1;});"
+            "if(!tab)return;tab.click();const bar=tab.closest('[data-testid=stTabs]')||tab;"
+            "const target=function(s){return s.scrollTop+bar.getBoundingClientRect().top-70;};"
+            "setTimeout(function(){const s=scroller();s.scrollTo({top:target(s),behavior:'smooth'});},40);"
+            "[450,900,1500].forEach(function(t){setTimeout(function(){const s=scroller();"
+            "if(Math.abs(bar.getBoundingClientRect().top-70)>30)s.scrollTop=target(s);},t);});}"
+            "d.addEventListener('click',function(e){const c=e.target.closest&&e.target.closest('[data-goto]');if(c)go(c);});"
+            "d.addEventListener('keydown',function(e){if(e.key!=='Enter'&&e.key!==' ')return;"
+            "const c=e.target.closest&&e.target.closest('[data-goto]');if(c){e.preventDefault();go(c);}});})();</script>")
+
+
+def lang_label() -> str:
+    return (f'<div class="lang-pill" title="The language you will speak in voice notes. Auto-detect works for most questions; '
+            f'picking the language improves accuracy for Indian languages.">{icon("mic")}<span>Speak in</span></div>')
 
 
 def listening() -> str:

@@ -11,7 +11,7 @@ def _ask(at, label):
 def test_ask_tab_shows_only_the_latest_answer_and_history_keeps_all():
     at = AppTest.from_file(str(Path(__file__).resolve().parents[1] / "app.py"), default_timeout=90).run()
     assert not at.exception
-    for label in ("most electricity", "per student", "Cafeteria water usage"):
+    for label in ("most electricity", "Compare electricity", "electricity trend"):
         _ask(at, label)
         assert not at.exception
     assert len(at.session_state.history) == 3

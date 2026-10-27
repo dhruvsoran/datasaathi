@@ -75,7 +75,9 @@ Interface:
   a loader while Whisper transcribes (preloaded at start), then a replayable voice-note bubble next to the question;
 - the suggestions panel collapses after every answer (a new expander key per question), so it is not shown twice;
 - the welcome curtain covers the whole window even with the sidebar open, and "Replay welcome intro" restarts it;
-- no version label on screen.
+- no version label on screen;
+- the spoken-language picker is a pill at the top-right corner; the Data Trust and Waste Radar cards open their tabs;
+- suggested questions are written from the loaded file (`suggest.py`), and the fixed "Try to break it" group is gone.
 
 Outside the visual layer (each with a test or an evaluation run):
 - **speed:** Gemma 4 calls use `think: false` and `keep_alive: 30m`, and the model is warmed up in the background
