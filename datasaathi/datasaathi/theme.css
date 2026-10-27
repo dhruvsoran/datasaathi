@@ -351,7 +351,6 @@ div[data-testid="stButton"] > button:disabled { opacity:.45; transform:none; box
   box-shadow:0 0 0 4px rgba(46,230,197,.06), 0 16px 40px rgba(0,0,0,.45); backdrop-filter:blur(14px); }
 [data-testid="stChatInput"]:focus-within { border-color:var(--teal) !important; box-shadow:0 0 0 4px rgba(46,230,197,.16), 0 16px 40px rgba(0,0,0,.45); }
 [data-testid="stChatInput"] textarea { font-size:.98rem; }
-[data-testid="stChatInputSubmitButton"] { background:linear-gradient(135deg,var(--teal),var(--violet)) !important; border-radius:12px !important; color:#04121A !important; }
 [data-testid="stTextInput"] input, [data-baseweb="select"] > div, [data-baseweb="input"] { background:rgba(255,255,255,.04) !important; border-color:var(--hair) !important; border-radius:12px !important; }
 [data-testid="stAudioInput"] > div { border-radius:var(--r-md); border:1px solid rgba(46,230,197,.3); background:rgba(46,230,197,.05); }
 [data-testid="stRadio"] label { padding:.3rem .2rem; }
@@ -368,11 +367,6 @@ hr { border-color:var(--hair) !important; }
 [class*="st-key-scroller"] iframe { height:0 !important; border:0; }
 [data-testid="stElementContainer"]:has(> [class*="st-key-scroller"]), [data-testid="stLayoutWrapper"]:has(> [class*="st-key-scroller"]) { margin:0 !important; height:0; }
 
-/* ---------- voice: after recording, Send replaces play/pause ---------- */
-[data-testid="stAudioInput"] button[aria-label="Play"], [data-testid="stAudioInput"] button[aria-label="Pause"] { display:none !important; }
-.st-key-voice_send { padding:.9rem 1rem .8rem; border-radius:var(--r-md); background:linear-gradient(135deg,rgba(46,230,197,.10),rgba(139,124,255,.10));
-  border:1px solid rgba(46,230,197,.32); margin-top:.3rem; }
-.st-key-voice_send div[data-testid="stButton"] > button[kind="primary"] { min-height:2.65rem; font-size:1rem; }
 .listen { margin:.6rem 0 .4rem !important; }
 .listen .lt { display:flex; align-items:center; gap:.5rem; font-family:var(--display); font-weight:600; font-size:1.02rem; color:#fff; }
 .listen .lt svg { width:18px; height:18px; color:var(--teal); animation:pulse 1.2s infinite; }
@@ -522,3 +516,28 @@ div[data-testid="stButton"] > button[kind="primary"]::before { background:rgba(2
 .think .drops i:nth-child(2) { background:var(--violet); animation-delay:.15s; } .think .drops i:nth-child(3) { background:var(--amber); animation-delay:.3s; }
 @keyframes dropbounce { 0%,100% { transform:translateY(0) scale(1); } 50% { transform:translateY(-14px) scale(.82); } }
 @media (max-width:560px) { .think .drops { display:none; } }
+
+/* ============ WhatsApp-style voice in the message bar ============ */
+:root { --wa:#25D366; --wa-d:#128C7E; }
+[data-testid="stChatInputMicButton"], [data-testid="stChatInputApproveButton"], [data-testid="stChatInputSubmitButton"] {
+  width:44px !important; height:44px !important; min-width:44px; border-radius:50% !important; border:none !important; display:grid; place-items:center; }
+[data-testid="stChatInputMicButton"], [data-testid="stChatInputApproveButton"], [data-testid="stChatInputSubmitButton"]:not(:disabled) {
+  background:linear-gradient(135deg,var(--wa),var(--wa-d)) !important; box-shadow:0 6px 18px rgba(37,211,102,.35); }
+[data-testid="stChatInputSubmitButton"]:disabled { background:rgba(255,255,255,.08) !important; box-shadow:none; }
+[data-testid="stChatInputMicButton"], [data-testid="stChatInputApproveButton"], [data-testid="stChatInputSubmitButton"]:not(:disabled) { color:#fff !important; }
+[data-testid="stChatInputMicButton"] svg, [data-testid="stChatInputApproveButton"] svg, [data-testid="stChatInputSubmitButton"]:not(:disabled) svg { color:#fff !important; }
+[data-testid="stChatInputMicButton"]:hover, [data-testid="stChatInputApproveButton"]:hover { transform:scale(1.08); }
+[data-testid="stChatInputApproveButton"] { width:50px !important; height:50px !important; animation:pulse-wa 1.6s ease-in-out infinite; }
+@keyframes pulse-wa { 0%,100% { box-shadow:0 0 0 0 rgba(37,211,102,.55); } 60% { box-shadow:0 0 0 10px rgba(37,211,102,0); } }
+[data-testid="stChatInputCancelButton"] { width:40px !important; height:40px !important; border-radius:50% !important; background:rgba(255,122,138,.14) !important; }
+[data-testid="stChatInputCancelButton"], [data-testid="stChatInputCancelButton"] svg { color:var(--coral) !important; }
+/* while recording: red pulsing dot and label at the start of the bar */
+[data-testid="stChatInput"]:has([data-testid="stChatInputApproveButton"]) { border-color:rgba(255,122,138,.55) !important; box-shadow:0 0 0 4px rgba(255,122,138,.10), 0 16px 40px rgba(0,0,0,.45); position:relative; }
+[data-testid="stChatInput"]:has([data-testid="stChatInputApproveButton"])::before { content:"● Recording · tap ✓ to send, ✕ to delete"; position:absolute; left:18px; top:-24px;
+  font:600 .74rem var(--body); color:var(--coral); letter-spacing:.02em; animation:pulse 1.2s infinite; }
+/* the sent voice note: a green bubble with the player, under the question */
+[class*="st-key-vnote_"] { max-width:460px; margin:-.35rem 0 .8rem 3rem; padding:.45rem .6rem .35rem; border-radius:6px 18px 18px 18px;
+  background:linear-gradient(135deg,rgba(37,211,102,.18),rgba(18,140,126,.16)); border:1px solid rgba(37,211,102,.35); }
+[class*="st-key-vnote_"] audio { width:100%; height:38px; }
+.ask-bubble.voice .av { background:linear-gradient(135deg,var(--wa),var(--wa-d)); color:#fff; }
+.ask-bubble .l svg { width:12px; height:12px; vertical-align:-1px; margin-right:.3rem; }

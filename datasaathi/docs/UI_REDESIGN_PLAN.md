@@ -71,7 +71,8 @@ panels with gradient hairline borders, and instruments (gauges, radar sweep, spa
 Interface:
 - the page scrolls to the running analysis when a question is asked, then to the answer;
 - no page-wide fade during reruns; own loaders instead (analysis steps, and "Listening to your recording…" for voice);
-- voice: play/pause hidden after recording, transcript box with a **Send** button, cleared after sending;
+- voice works like a WhatsApp voice note: a green mic in the question bar (`st.chat_input(accept_audio=True)`), ✓ to send / ✕ to delete,
+  a loader while Whisper transcribes (preloaded at start), then a replayable voice-note bubble next to the question;
 - the suggestions panel collapses after every answer (a new expander key per question), so it is not shown twice;
 - the welcome curtain covers the whole window even with the sidebar open, and "Replay welcome intro" restarts it;
 - no version label on screen.

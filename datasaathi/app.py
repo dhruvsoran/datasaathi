@@ -1,7 +1,6 @@
 """DataSaathi 2.0: ask community data questions in English or Indian languages, by typing or speaking.
 Every answer is computed by code and ships with a Proof Receipt.
 Tabs: Ask · Waste Radar · Data Trust · History. 2.0 changes only the visual layer (ui.py, theme.css, charts)."""
-import hashlib
 import json
 from pathlib import Path
 import pandas as pd
@@ -46,6 +45,14 @@ def warm_model(name: str):
     return True
 
 
+@st.cache_resource(show_spinner=False)
+def warm_voice():
+    """Load the speech model in the background once, so the first voice note does not wait for it."""
+    import threading
+    threading.Thread(target=voice.warm, daemon=True).start()
+    return True
+
+
 # ---------------- sidebar ----------------
 with st.sidebar:
     st.markdown(ui.brand(), unsafe_allow_html=True)
@@ -72,6 +79,8 @@ with st.sidebar:
                    "eight other Indian languages for common phrasings). To enable Gemma 4: `ollama pull gemma4:e4b`, then refresh.")
     st.markdown(ui.side_h("mic", "Voice"), unsafe_allow_html=True)
     voice_lang = st.selectbox("Spoken language", list(voice.STT_LANGUAGES), help="Pick the language you will speak, or Auto-detect.")
+    if voice.available():
+        warm_voice()
     st.markdown(ui.side_h("spark", "Experience"), unsafe_allow_html=True)
     if st.button("Replay welcome intro", width="stretch", icon=":material/replay:"):
         st.session_state["intro_seen"] = False
@@ -91,6 +100,22 @@ def load_named(name: str):
 def explain_finding(f, use_gemma: bool, model: str):
     """Waste Radar wording, cached so Gemma is not asked again on every click (the text itself is unchanged)."""
     return waste_radar.explain(f, use_gemma=use_gemma, model=model)
+
+
+def voice_to_text(clip: bytes, lang_label: str) -> tuple[str | None, str]:
+    """(transcript, problem): the transcript of a voice note, or None and a plain reason why there is none."""
+    lvl = voice.level(clip)
+    if lvl and lvl[1] < voice.SILENT_PEAK:
+        return None, (f"Could not hear anything: the {lvl[0]:.1f} s voice note is silent, so the browser got no sound from your "
+                      "microphone. Check that the mic is not muted (Windows: Settings → System → Sound → Input) and that the "
+                      "browser may use it (the icon at the left of the address bar), then record again.")
+    try:
+        heard, _ = voice.transcribe(clip, voice.STT_LANGUAGES[lang_label])
+    except Exception as exc:
+        return None, f"Could not turn the voice note into text ({type(exc).__name__}: {exc}). Please type the question instead."
+    if not heard.strip():
+        return None, "No speech was found in the voice note. Speak a little closer to the microphone and send it again."
+    return heard.strip(), ""
 
 
 def campus_kpis(df: pd.DataFrame, card, limit: int = 4) -> list[dict]:
@@ -141,7 +166,11 @@ def scroll_to(selector: str, block: str = "start"):
 
 def show(a, where: str, fresh: bool):
     """Render one answer: question, answer, pipeline trace, chart/table, caveats and the Proof Receipt."""
-    st.markdown(ui.question(a.question), unsafe_allow_html=True)
+    clip = st.session_state.get("voice_clips", {}).get(id(a))
+    st.markdown(ui.question(a.question, voice=clip is not None), unsafe_allow_html=True)
+    if clip is not None:
+        with st.container(key=f"vnote_{where}"):
+            st.audio(clip, format="audio/wav")
     refused = a.status == "refused"
     st.markdown(ui.answer_box(a.text, refused, None if refused else (a.guard.ok if a.guard else None),
                               len(a.guard.checked) if a.guard else 0, a.planner, a.trust_score, fresh=fresh), unsafe_allow_html=True)
@@ -198,69 +227,34 @@ with tab_ask:
                     if cols[i].button(s_, key=f"s{gi}_{start + i}", width="stretch", icon=mat):
                         clicked = s_
 
-    voice_q = None
-    with st.expander("Ask by voice", icon=":material/mic:"):
-        if not voice.available():
-            st.info("Voice questions need the speech model. Run `pip install faster-whisper` and restart the app. "
-                    "The Colab notebook installs it for you.")
+    # one message bar like WhatsApp: type, or tap the mic, record, replay or delete the clip, then send
+    voice_ok = voice.available()
+    sent = st.chat_input("Type a question, or tap the mic to speak (English or Indian languages)", accept_audio=voice_ok,
+                         key="ask_bar")
+    typed, clip, heard = None, None, None
+    if sent is not None:
+        typed = ((sent.text if voice_ok else sent) or "").strip() or None
+        clip = sent.audio.getvalue() if voice_ok and sent.audio is not None else None
+    if clip:
+        busy = st.empty()                          # our own loader while Whisper turns the voice note into text
+        busy.markdown(ui.listening(), unsafe_allow_html=True)
+        scroll_to(".listen", "center")
+        heard, problem = voice_to_text(clip, voice_lang)
+        busy.empty()
+        if heard:
+            typed = heard
         else:
-            st.markdown(ui.voice_head(), unsafe_allow_html=True)
-            audio = st.audio_input("Record your question, then press stop", key="mic")
-            if audio is not None:
-                data = audio.getvalue()
-                digest = hashlib.md5(data).hexdigest()
-                if st.session_state.get("voice_hash") != digest:
-                    lvl = voice.level(data)
-                    st.session_state["voice_trace"] = ""
-                    if lvl and lvl[1] < voice.SILENT_PEAK:
-                        st.session_state["voice_text"] = ""
-                        st.session_state["voice_note"] = (
-                            f"Could not hear anything: the {lvl[0]:.1f} s recording is silent, so the browser got no sound "
-                            "from your microphone. Check that the mic is not muted (Windows: Settings → System → Sound → "
-                            "Input, speak and watch the level bar), that the right input device is selected there, and that "
-                            "the browser is allowed to use the microphone (the icon at the left of the address bar).")
-                    else:
-                        busy = st.empty()                  # our own loader instead of the page fading while Whisper runs
-                        busy.markdown(ui.listening(), unsafe_allow_html=True)
-                        try:
-                            heard, detected = voice.transcribe(data, voice.STT_LANGUAGES[voice_lang])
-                            st.session_state["voice_text"] = heard
-                            rec = f"Recording: {lvl[0]:.1f} s, peak level {lvl[1]:.0%}. " if lvl else ""
-                            if heard:
-                                st.session_state["voice_note"] = rec + (f"Detected language: {detected}" if detected else "")
-                            else:
-                                st.session_state["voice_note"] = (rec + "No speech was found in it. Speak a little louder or "
-                                                                  "closer to the microphone and record again.")
-                        except Exception as exc:
-                            import traceback
-                            st.session_state["voice_text"] = ""
-                            st.session_state["voice_note"] = f"Could not transcribe: {type(exc).__name__}: {exc}"
-                            st.session_state["voice_trace"] = traceback.format_exc()
-                        busy.empty()
-                    st.session_state["voice_hash"] = digest
-                if st.session_state.pop("voice_sent", False):   # the transcript was sent: clear it so Send is not pressed twice
-                    st.session_state["voice_text"] = ""
-                    st.session_state["voice_note"] = "Sent. Record again to ask another question."
-                with st.container(key="voice_send"):
-                    c_text, c_send = st.columns([5, 1], vertical_alignment="bottom")
-                    heard_text = c_text.text_input("What I heard (edit it if needed)", key="voice_text")
-                    if c_send.button("Send", type="primary", disabled=not heard_text.strip(), icon=":material/send:", width="stretch"):
-                        voice_q = heard_text.strip()
-                        st.session_state["voice_sent"] = True
-                if st.session_state.get("voice_note"):
-                    st.caption(st.session_state["voice_note"])
-                    if st.session_state.get("voice_trace") and str(st.session_state["voice_note"]).startswith("Could not"):
-                        with st.expander("Technical details (send this if you ask for help)"):
-                            st.code(st.session_state["voice_trace"])
-
-    typed = st.chat_input("Ask in English, Hindi, Gujarati, Tamil, Punjabi, Marathi, Bengali, Telugu, Kannada or Malayalam")
-    question = clicked or voice_q or typed
+            st.markdown(ui.callout(problem, "warn"), unsafe_allow_html=True)
+    question = clicked or typed
     if question:
         ph = st.empty()
         ph.markdown(ui.thinking(), unsafe_allow_html=True)
         scroll_to(".think", "center")             # bring the running analysis into view right away
         st.session_state["scroll_answer"] = True
-        st.session_state.history.append(answer(question, df, card, use_gemma=use_gemma, model=model, log=True))
+        a = answer(question, df, card, use_gemma=use_gemma, model=model, log=True)
+        st.session_state.history.append(a)
+        if heard:                                  # keep the voice note so it can be replayed next to the question
+            st.session_state.setdefault("voice_clips", {})[id(a)] = clip
         ph.empty()
         st.rerun()          # re-render so the suggestions fold away and the newest answer is shown
 

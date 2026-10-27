@@ -51,6 +51,19 @@ def _load(force_cpu: bool = False):
     return _model
 
 
+def warm() -> None:
+    """Load Whisper ahead of the first voice note; one second of silence also settles GPU vs CPU (GPU libraries may be missing)."""
+    try:
+        m = _load()
+        try:
+            list(m.transcribe(np.zeros(TARGET_RATE, dtype=np.float32), vad_filter=False)[0])
+        except RuntimeError:
+            if _device == "cuda":
+                _load(force_cpu=True)
+    except Exception:
+        pass
+
+
 def wav_to_audio(data: bytes, target: int = TARGET_RATE) -> np.ndarray:
     """Decode a PCM WAV recording to mono float32 at 16 kHz (what Whisper expects)."""
     with wave.open(io.BytesIO(data)) as w:
