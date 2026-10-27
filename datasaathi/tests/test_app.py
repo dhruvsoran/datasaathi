@@ -49,3 +49,17 @@ def test_welcome_curtain_can_be_skipped_and_replayed():
     at2 = _app().run()
     [b for b in at2.button if "Replay welcome" in b.label][0].click().run()
     assert _has_intro(at2)
+
+
+def test_page_layout_does_not_shift_after_the_welcome_curtain():
+    # the curtain keeps its own slot after the first run; if the elements below moved up one place, the old tabs and
+    # suggestions would stay on screen as a second copy while the next question is answered
+    def layout(at):
+        kids = at.main.children
+        return sorted(kids), [k for k, v in kids.items() if type(v).__name__ == "Block"]     # slots, and where the tabs sit
+    at = _app().run()
+    first = layout(at)
+    assert _has_intro(at)
+    [b for b in at.button if "most electricity" in b.label][0].click().run()
+    assert not _has_intro(at)
+    assert layout(at) == first

@@ -26,5 +26,5 @@
 
 ## New: Indian languages and voice (add to the demo)
 - Ask the same question in **Gujarati, Tamil or Punjabi** (suggestion buttons) and, with Gemma 4 on, the answer comes back in that language with the same verified numbers. Say: "Number Guard re-checks every number after translation."
-- Open **Ask by voice**, speak a question in your language, show the text it heard, press *Ask this question*. Say: "Speech runs locally with Whisper; nothing is sent to a cloud service."
+- Tap the green **mic** in the question bar, speak a question in your language, tap **✓** to send; show the voice-note bubble (replayable) and the text it heard. Say: "Speech runs locally with Whisper; nothing is sent to a cloud service."
 - Honest line if asked: voice and keyword lists for the Indian languages are new and not reviewed by native speakers; Gemma 4 handles free-form wording.

@@ -204,9 +204,10 @@ def group_label(ic: str, text: str, color: str = AMBER) -> str:
     return f'<div class="grp" style="--c:{color}">{icon(ic)}{e(text)}</div>'
 
 
-def question(q: str) -> str:
-    return (f'<div class="ask-bubble"><div class="av">{icon("user")}</div><div class="b"><div class="l">You asked</div>'
-            f'<div class="q">{e(q)}</div></div></div>')
+def question(q: str, voice: bool = False) -> str:
+    label = f'{icon("mic")}You said · voice note' if voice else "You asked"
+    return (f'<div class="ask-bubble{" voice" if voice else ""}"><div class="av">{icon("mic" if voice else "user")}</div><div class="b">'
+            f'<div class="l">{label}</div><div class="q">{e(q)}</div></div></div>')
 
 
 def _seal(kind: str) -> str:

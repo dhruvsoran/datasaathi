@@ -103,7 +103,7 @@ The Docker files are provided but have not been tested end to end by the author.
 3. **Compare.** *Compare electricity use in September and October.*
 4. **Unavailable statistic.** *What is the electricity use per student?* The app refuses: there is no headcount in the data.
 5. **Missing observation.** *Show electricity usage for Library in March 2026.*
-6. **Indian languages.** *पिछले महीने सबसे ज्यादा बिजली किस बिल्डिंग ने इस्तेमाल की?* (Hindi), or the Gujarati, Tamil and Punjabi suggestions. Or press **Ask by voice** and speak.
+6. **Indian languages.** *पिछले महीने सबसे ज्यादा बिजली किस बिल्डिंग ने इस्तेमाल की?* (Hindi), or the Gujarati, Tamil and Punjabi suggestions. Or tap the green **mic** in the question bar and speak.
 7. **Unasked problems.** *Is there any waste in water use?* or open the **Waste Radar** tab. Girls Hostel stays near full load in the June vacation.
 8. **Bad data.** Switch to *Messy demo* and watch the Data Trust score fall and answers carry warnings.
 9. **New data.** Choose *Upload my own CSV* and upload `data/campus_demo_upload.csv` with `data/campus_demo_upload.card.yaml`. It has different columns and names, and a hidden water leak. Questions are in `docs/UPLOAD_DEMO_QUESTIONS.txt`.
@@ -139,7 +139,7 @@ The Docker files are provided but have not been tested end to end by the author.
 | Answer language | Verified English answer is translated by Gemma 4; **Number Guard re-checks every number** and falls back to English if any changed | English |
 | Warnings and notes | English | English |
 
-**Voice.** Open **Ask by voice** on the Ask tab, allow the microphone, speak, press stop, check the text it heard (you can edit it), then press **Ask this question**. Speech is turned into text by Whisper (`faster-whisper`), which runs on your machine or Colab GPU after a one-time model download.
+**Voice (works like a WhatsApp voice note).** Tap the green **mic** in the question bar and allow the microphone. While it records, a red *Recording* label shows: tap **✓** to send or **✕** to delete. The app turns the voice note into text, asks it straight away, and shows your question as a voice-note bubble you can **replay**. A silent recording (muted mic) gets a clear message instead of an empty answer. Speech is turned into text by Whisper (`faster-whisper`), which runs on your machine or Colab GPU after a one-time model download.
 
 ```bash
 pip install -r requirements-voice.txt                    # optional; the Colab notebook does this for you
@@ -158,8 +158,8 @@ All captured from the running app with Gemma 4 (`gemma4:e4b`) connected, on the 
 | Answer: Number Guard seal, five-step trace and chart | Proof Receipt, the code that ran and the rows used |
 |---|---|
 | ![Answer card with the verified seal, pipeline trace and ranking chart](datasaathi/docs/screenshots/ask-answer.jpg) | ![Printed proof receipt with VERIFIED stamp, code and rows](datasaathi/docs/screenshots/receipt.jpg) |
-| **Refusal: no headcount in the data, so no guess** | **Voice: speak, check the text, press Send** |
-| ![Refused answer with the red seal and a REFUSED receipt](datasaathi/docs/screenshots/refusal.jpg) | ![Voice panel with the recorder above the question box](datasaathi/docs/screenshots/voice.jpg) |
+| **Refusal: no headcount in the data, so no guess** | **Voice note: tap the mic, speak, ✓ to send, replay it** |
+| ![Refused answer with the red seal and a REFUSED receipt](datasaathi/docs/screenshots/refusal.jpg) | ![Voice note bubble with a player under the question bar, and the answer](datasaathi/docs/screenshots/voice.jpg) |
 | **Waste Radar: problems nobody asked about** | **Data Trust: how reliable the file is** |
 | ![Radar scope and an incident card, actual against expected](datasaathi/docs/screenshots/waste-radar.jpg) | ![Ring gauges per metric and the issue timeline](datasaathi/docs/screenshots/data-trust.jpg) |
 | **History: every question this session** | **Welcome curtain (plays once, `?intro=0` skips it)** |
@@ -203,7 +203,7 @@ Each question replaces the previous answer on the Ask tab, so the page stays sho
 - every answer as a card with a rotating **Number Guard seal** (green when every figure was verified, red when the app refused), the five-step pipeline trace, a restyled chart (shaded ranking bars, a smooth trend with the peak marked) and the printed **Proof Receipt** with a VERIFIED / REFUSED stamp;
 - incident cards in Waste Radar (actual against expected), ring gauges and an issue timeline in Data Trust, a question timeline in History;
 - the page **scrolls itself** to the running analysis when you ask, and to the answer when it is ready;
-- **voice**: record, a loader shows while speech is turned into text, then check the text and press **Send**.
+- **voice like WhatsApp**: a green mic in the question bar; record, ✓ to send or ✕ to delete; a loader while speech becomes text; then your question shows as a voice-note bubble you can replay, and the answer follows.
 
 On first open, a short **welcome curtain** ("HACKTOBER | FEST" written across two curtains that part to reveal the app) plays once per session and covers the whole window, sidebar included. Add `?intro=0` to the address to skip it, or press **Replay welcome intro** in the sidebar.
 
@@ -296,7 +296,7 @@ Data is treated as monthly. Daily readings should be summed to months first. Wit
 | Colab says no GPU | Runtime → Change runtime type → T4 GPU, then reconnect |
 | Welcome curtain is in the way | Add `?intro=0` to the address (for example `http://localhost:8501/?intro=0`), or use it once and it will not return in that session |
 | Sidebar closed and gone | Click the teal **»** button at the top-left of the page to reopen it |
-| **Ask by voice** says it needs the speech model | `pip install -r requirements-voice.txt`, then restart the app |
+| No mic in the question bar, or voice says it needs the speech model | `pip install -r requirements-voice.txt`, then restart the app |
 | Microphone does not record | Allow microphone access for the page; use `localhost` or an `https` link |
 | Question answered "not answerable" unexpectedly | Open the Proof Receipt; the plan and `missing_field` say what the app thought was missing |
 
