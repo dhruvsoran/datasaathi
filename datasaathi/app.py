@@ -15,9 +15,12 @@ ROOT = Path(__file__).parent
 st.set_page_config(page_title="DataSaathi: ask your campus data", page_icon="🛰️", layout="wide", initial_sidebar_state="expanded")
 st.markdown(ui.CSS, unsafe_allow_html=True)
 show_intro = not st.session_state.get("intro_seen") and st.query_params.get("intro") != "0"   # welcome curtain: once per session (?intro=0 skips it)
+# The curtain always gets its own slot, empty after the first run. Without it every element below would move up one place on
+# the next run, and while that run is busy (answering, transcribing) the old tabs and suggestions would show as a second copy.
+intro_slot = st.empty()
 if show_intro:
     st.session_state["intro_n"] = st.session_state.get("intro_n", 0) + 1
-    st.markdown(ui.intro(st.session_state["intro_n"]), unsafe_allow_html=True)
+    intro_slot.markdown(ui.intro(st.session_state["intro_n"]), unsafe_allow_html=True)
     st.session_state["intro_seen"] = True
 
 SUGGESTIONS = {
