@@ -1,6 +1,6 @@
-"""DataSaathi 2.0: ask community data questions in English or Indian languages, by typing or speaking.
+"""DataSaathi: ask community data questions in English or Indian languages, by typing or speaking.
 Every answer is computed by code and ships with a Proof Receipt.
-Tabs: Ask · Waste Radar · Data Trust · History. 2.0 changes only the visual layer (ui.py, theme.css, charts)."""
+Tabs: Ask · Waste Radar · Data Trust · History. The look lives in ui.py, theme.css and charts.py."""
 import json
 from pathlib import Path
 import pandas as pd
@@ -12,7 +12,7 @@ from datasaathi.pipeline import answer
 from datasaathi.planner import DEFAULT_MODEL, ollama_models, ollama_warm
 
 ROOT = Path(__file__).parent
-st.set_page_config(page_title="DataSaathi: ask your campus data", page_icon="🛰️", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="DataSaathi: ask your campus data", page_icon="🛰️", layout="wide", initial_sidebar_state="auto")
 st.markdown(ui.CSS, unsafe_allow_html=True)
 show_intro = not st.session_state.get("intro_seen") and st.query_params.get("intro") != "0"   # welcome curtain: once per session (?intro=0 skips it)
 # The curtain always gets its own slot, empty after the first run. Without it every element below would move up one place on
@@ -24,8 +24,7 @@ if show_intro:
     st.session_state["intro_seen"] = True
 
 GROUP_LOOK = {"Rank and compare": ("rank", ui.AMBER, ":material/leaderboard:"),     # suggestions are written from the loaded data
-              "Trends and totals": ("trend", ui.TEAL, ":material/show_chart:"),
-              "In your language": ("globe", ui.VIOLET, ":material/translate:")}
+              "Trends and totals": ("trend", ui.TEAL, ":material/show_chart:")}
 
 @st.cache_resource(show_spinner=False)
 def warm_model(name: str):
@@ -61,10 +60,8 @@ with st.sidebar:
     model = st.selectbox("Model", gemma or models or [DEFAULT_MODEL], disabled=not use_gemma, label_visibility="collapsed")
     if use_gemma:
         warm_model(model)
-    if gemma:
-        st.markdown('<span class="chip ok live">Gemma 4 connected</span>', unsafe_allow_html=True)
-    else:
-        st.markdown('<span class="chip lite">Lite mode</span>', unsafe_allow_html=True)
+    st.markdown(ui.side_status("Gemma 4 connected" if gemma else "Lite mode", bool(gemma)), unsafe_allow_html=True)
+    if not gemma:
         st.caption("Gemma 4 was not found on this machine, so questions are planned by the built-in rule-based planner (English, Hindi and "
                    "eight other Indian languages for common phrasings). To enable Gemma 4: `ollama pull gemma4:e4b`, then refresh.")
     st.markdown(ui.side_h("spark", "Experience"), unsafe_allow_html=True)
@@ -128,8 +125,20 @@ mode_text = f"Gemma 4 · {model}" if use_gemma else "Lite mode · rule-based pla
 if source == "Upload my own CSV":
     if up_csv is None:
         st.markdown(ui.hero("No dataset yet", False, "waiting for a file", None, None, mode_text, bool(use_gemma), animate=False), unsafe_allow_html=True)
-        st.markdown(ui.empty_state("Upload a CSV to begin", "Use the sidebar. One column of names (buildings, wards, plants), one month or date column, "
-                                   "and one or more numeric columns. A Data Card YAML is optional but adds units and a source.", "db"), unsafe_allow_html=True)
+        with st.container(key="goto_js"):      # the Data Trust and Waste Radar cards still open their (waiting) tabs
+            st.iframe(ui.goto_script(), height=1)
+        how = ("Use the sidebar. One column of names (buildings, wards, plants), one month or date column, and one or more numeric columns. "
+               "A Data Card YAML is optional but adds units and a source.")
+        waiting = [("Upload a CSV to begin", how, "db"),
+                   ("Waste Radar runs on your file", "Once a CSV is loaded, every row name is compared with its own history and the overall "
+                    "pattern, and unusual readings are listed here.", "radar"),
+                   ("Data Trust runs on your file", "Once a CSV is loaded, it is checked for completeness, month gaps, duplicates, impossible "
+                    "values and likely typos, and scored here.", "shield"),
+                   ("No questions yet", "Load a file and ask something in the Ask tab; it will appear here.", "history")]
+        for tab, (title, body, ic) in zip(st.tabs([":material/forum: Ask", ":material/radar: Waste Radar", ":material/verified_user: Data Trust",
+                                                    ":material/history: History"]), waiting):
+            with tab:
+                st.markdown(ui.empty_state(title, body, ic), unsafe_allow_html=True)
         st.stop()
     try:
         raw = pd.read_csv(up_csv); up_csv.seek(0)

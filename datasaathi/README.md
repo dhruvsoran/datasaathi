@@ -10,7 +10,7 @@
 Hacktoberfest Hackday 2026 · PS 03 *Community and Environmental Data Intelligence* · Track 1 *Best Use of Gemma 4*
 Built by Dhruv Soran, IIMT University, Meerut
 
-![DataSaathi home screen: command deck with the Data Trust gauge, Waste Radar scope and campus totals](docs/screenshots/home.jpg)
+![DataSaathi home screen: page header, Data Trust and Waste Radar cards and campus totals with trend lines](docs/screenshots/home.jpg)
 
 DataSaathi lets anyone ask questions about campus electricity and water data by **typing or speaking**, in **English or nine Indian languages** (Hindi, Gujarati, Tamil, Punjabi, Marathi, Bengali, Telugu, Kannada, Malayalam).
 
@@ -21,7 +21,7 @@ DataSaathi lets anyone ask questions about campus electricity and water data by 
 5. **Waste Radar** finds problems nobody asked about, and the **Data Trust check** says how reliable the data is.
 6. When the data cannot answer, it **refuses instead of guessing**.
 
-**Latest update:** a redesigned interface (see [Screenshots](#screenshots)), answers in about 10 seconds instead of 2 to 3 minutes on a laptop GPU (see [Speed](#speed)), two more logged plan repairs, and a fix for uploading a CSV without a Data Card.
+**Latest update:** a clean, professional interface in a *lush forest* palette with purposeful motion (see [Screenshots](#screenshots) and [The interface](#how-it-works)), answers in about 10 seconds instead of 2 to 3 minutes on a laptop GPU (see [Speed](#speed)), two more logged plan repairs, and a fix for uploading a CSV without a Data Card.
 
 ---
 
@@ -103,7 +103,7 @@ The Docker files are provided but have not been tested end to end by the author.
 3. **Compare.** *Compare electricity use in September and October.*
 4. **Unavailable statistic.** *What is the electricity use per student?* The app refuses: there is no headcount in the data.
 5. **Missing observation.** *Show electricity usage for Library in March 2026.*
-6. **Indian languages.** *पिछले महीने सबसे ज्यादा बिजली किस बिल्डिंग ने इस्तेमाल की?* (Hindi), or the Gujarati, Tamil and Punjabi suggestions. Or tap the green **mic** in the question bar and speak.
+6. **Indian languages.** *पिछले महीने सबसे ज्यादा बिजली किस बिल्डिंग ने इस्तेमाल की?* (Hindi), or type the same question in Gujarati, Tamil or Punjabi. Or tap the green **mic** in the question bar and speak.
 7. **Unasked problems.** *Is there any waste in water use?* or click the **Waste Radar** card at the top (or its tab). Girls Hostel stays near full load in the June vacation.
 8. **Bad data.** Switch to *Messy demo* and watch the Data Trust score fall and answers carry warnings.
 9. **New data.** Choose *Upload my own CSV* and upload `data/campus_demo_upload.csv` with `data/campus_demo_upload.card.yaml`. It has different columns and names, and a hidden water leak. Questions are in `docs/UPLOAD_DEMO_QUESTIONS.txt`.
@@ -139,13 +139,13 @@ The Docker files are provided but have not been tested end to end by the author.
 | Answer language | Verified English answer is translated by Gemma 4; **Number Guard re-checks every number** and falls back to English if any changed | English |
 | Warnings and notes | English | English |
 
-**Voice (works like a WhatsApp voice note).** Tap the green **mic** in the question bar and allow the microphone. While it records, a red *Recording* label shows: tap **✓** to send or **✕** to delete. The app turns the voice note into text, asks it straight away, and shows your question as a voice-note bubble you can **replay**. A silent recording (muted mic) gets a clear message instead of an empty answer. Speech is turned into text by Whisper (`faster-whisper`), which runs on your machine or Colab GPU after a one-time model download.
+**Voice (works like a WhatsApp voice note).** Tap the green **mic** in the question bar and allow the microphone. While it records, the question window's title strip turns red: tap **✓** to send or **✕** to delete. The app turns the voice note into text, asks it straight away, and shows your question as a voice-note bubble you can **replay**. A silent recording (muted mic) gets a clear message instead of an empty answer. Speech is turned into text by Whisper (`faster-whisper`), which runs on your machine or Colab GPU after a one-time model download.
 
 ```bash
 pip install -r requirements-voice.txt                    # optional; the Colab notebook does this for you
 DATASAATHI_STT_MODEL=small streamlit run app.py          # tiny/base for small laptops, small/medium for better Indian-language accuracy
 ```
-Choose the language you will speak in the **Speak in** pill at the top-right corner (or leave it on Auto-detect). Microphone access works on `localhost` and `https` links (including the Colab tunnel link).
+Choose the language you will speak in the **Speak in** button at the top-right of the page (or leave it on Auto-detect). Microphone access works on `localhost` and `https` links (including the Colab tunnel link).
 
 Limits, stated plainly: the keyword lists were written carefully but are not reviewed by native speakers; speech accuracy varies by language and model size; building names spoken in a non-Latin script may not match the English names in the data unless Gemma 4 maps them; and the voice path was tested with a stand-in model, not yet with real recordings.
 
@@ -155,21 +155,21 @@ Limits, stated plainly: the keyword lists were written carefully but are not rev
 
 All captured from the running app with Gemma 4 (`gemma4:e4b`) connected, on the synthetic sample data.
 
-| Answer: Number Guard seal, five-step trace and chart | Proof Receipt, the code that ran and the rows used |
+| Answer: verified badge, five-step trace and chart | Proof Receipt, the code that ran and the rows used |
 |---|---|
-| ![Answer card with the verified seal, pipeline trace and ranking chart](docs/screenshots/ask-answer.jpg) | ![Printed proof receipt with VERIFIED stamp, code and rows](docs/screenshots/receipt.jpg) |
+| ![Answer card with the Numbers verified badge, pipeline trace and ranking chart](docs/screenshots/ask-answer.jpg) | ![Proof receipt with the Verified badge, code and rows](docs/screenshots/receipt.jpg) |
 | **Refusal: no headcount in the data, so no guess** | **Voice note: tap the mic, speak, ✓ to send, replay it** |
-| ![Refused answer with the red seal and a REFUSED receipt](docs/screenshots/refusal.jpg) | ![Voice note bubble with a player under the question bar, and the answer](docs/screenshots/voice.jpg) |
+| ![Refused answer with the red edge and a Refused receipt](docs/screenshots/refusal.jpg) | ![Voice note bubble with a player under the question, and the answer](docs/screenshots/voice.jpg) |
 | **Waste Radar: problems nobody asked about** | **Data Trust: how reliable the file is** |
-| ![Radar scope and an incident card, actual against expected](docs/screenshots/waste-radar.jpg) | ![Ring gauges per metric and the issue timeline](docs/screenshots/data-trust.jpg) |
+| ![Summary card and an incident card, actual against expected](docs/screenshots/waste-radar.jpg) | ![Score and meter per metric and the list of issues](docs/screenshots/data-trust.jpg) |
 | **History: every question this session** | **Welcome curtain (plays once, `?intro=0` skips it)** |
-| ![Question timeline with answered and refused dots](docs/screenshots/history.jpg) | ![HACKTOBER FEST curtain](docs/screenshots/intro.jpg) |
+| ![Question list with answered and refused dots](docs/screenshots/history.jpg) | ![HACKTOBER FEST curtain](docs/screenshots/intro.jpg) |
 
-On a phone the deck stacks into single cards:
+On a phone the stat cards sit two to a row and the sidebar starts closed:
 
 <img src="docs/screenshots/mobile.jpg" alt="Phone layout of the home screen" width="300">
 
-Motion does not show in stills: the Data Trust gauge is filled with a moving liquid up to its score, gooey blobs drift behind the headline, waves roll along the panels, the radar sweeps, buttons fill with liquid on hover and answers drop in with a small bounce.
+Motion does not show in stills: the Data Trust score and Waste Radar count count up, meters fill, trend lines draw themselves, answers build step by step, and live dots pulse.
 
 ---
 
@@ -192,23 +192,22 @@ question ─► Gemma 4 plan (JSON) ─► validate against Data Card ─► whi
 | Number Guard | Every number in model text must exist in the computed output, else a verified template answer is shown | `explain.py` |
 | Waste Radar | Compares each building with its own history and the campus-wide pattern; flags unusual readings | `waste_radar.py` |
 | Data Trust | Completeness, month gaps, duplicates, impossible values, likely typos, a 0 to 100 score | `data_trust.py` |
-| Interface | Streamlit app: command deck, answer cards, charts, receipt, auto-scroll, voice panel | `app.py`, `ui.py`, `theme.css`, `charts.py`, `.streamlit/config.toml` |
+| Interface | Streamlit app: page header and stat cards, answer cards, charts, receipt, smooth auto-scroll, compose window with voice notes | `app.py`, `ui.py`, `theme.css`, `charts.py`, `.streamlit/config.toml` |
 | Languages and voice | Indian-language vocabulary, answer translation, speech to text | `lexicon.py`, `localize.py`, `voice.py` |
 | Query log | Local DuckDB file and History tab | `logs.py` |
 
 Each question replaces the previous answer on the Ask tab, so the page stays short; earlier answers are one click away in the **History** tab.
 
-**The interface ("data observatory").** A dusk-blue canvas with soft aurora light, frosted-glass panels and instruments instead of plain numbers:
-- a **command deck** at the top: Data Trust as a ring gauge, Waste Radar as a rotating scope with one blip per alert, and campus totals for the latest month with the change against the month before and a 12-month sparkline (pandas sums of the loaded file);
-- every answer as a card with a rotating **Number Guard seal** (green when every figure was verified, red when the app refused), the five-step pipeline trace, a restyled chart (shaded ranking bars, a smooth trend with the peak marked) and the printed **Proof Receipt** with a VERIFIED / REFUSED stamp;
-- incident cards in Waste Radar (actual against expected), ring gauges and an issue timeline in Data Trust, a question timeline in History;
-- the page **scrolls itself** to the running analysis when you ask, and to the answer when it is ready;
-- the **Data Trust** and **Waste Radar** cards in the deck are clickable and open their tabs;
-- **voice like WhatsApp**: a green mic in the question bar; record, ✓ to send or ✕ to delete; a loader while speech becomes text; then your question shows as a voice-note bubble you can replay, and the answer follows.
+**The interface.** Calm and professional, in a *lush forest* palette (forest `#2E6F40`, mint `#CFFFDC`, sage `#68BA7F`, deep forest `#253D2C`): a light mint page, near-white cards, thin borders and one accent colour; amber marks electricity and blue marks water.
+- a **page header** with the dataset, period and model, then one row of **stat cards**: the Data Trust score with a meter, the Waste Radar count with a breakdown, and for each metric the latest campus total, the change against the month before and a 12-month trend line (pandas sums of the loaded file); the Data Trust and Waste Radar cards open their tabs;
+- every answer as a card with a **Numbers verified** badge (red edge and badge when the app refused), the five-step pipeline trace on one line, a calm chart (the leader in full colour, a peak label on trends) and the **Proof Receipt** as a clean document with a Verified / Refused badge;
+- the question bar as a **compose window**: a title strip with a keyboard hint, room for a few lines, a blinking cursor while it is empty, and mic and send at the bottom right; **voice like WhatsApp**: record, ✓ to send or ✕ to delete, then your question shows as a voice-note bubble you can replay;
+- the page **scrolls smoothly** to the running analysis when you ask, and to the answer when it is ready;
+- suggested questions are written from the loaded file; the **Speak in** language button sits at the top-right of the page.
 
 On first open, a short **welcome curtain** ("HACKTOBER | FEST" written across two curtains that part to reveal the app) plays once per session and covers the whole window, sidebar included. Add `?intro=0` to the address to skip it, or press **Replay welcome intro** in the sidebar.
 
-All motion is CSS (no JavaScript animation libraries) and is switched off automatically for visitors who ask their system for reduced motion. The redesign changed only the visual layer; the design notes are in [docs/UI_REDESIGN_PLAN.md](docs/UI_REDESIGN_PLAN.md).
+All motion is CSS and plays once (numbers count up, meters fill, lines draw, answers build step by step); the few small loops pause while you scroll, and everything is switched off for visitors who ask their system for reduced motion. The interface changes only the visual layer; the design notes are in [docs/PRO_UI_PLAN.md](docs/PRO_UI_PLAN.md) (and the earlier redesign in [docs/UI_REDESIGN_PLAN.md](docs/UI_REDESIGN_PLAN.md)).
 
 ---
 
@@ -281,7 +280,7 @@ not_available: [students / occupancy, cost / tariff]   # what the dataset does N
 ```
 Data is treated as monthly. Daily readings should be summed to months first. Without a Data Card the app builds a basic one and warns that the source is not verified.
 
-**Suggested questions follow your file** (`datasaathi/suggest.py`). They are written from the loaded data: its own name column ("Which *block* used the most electricity last month?"), its metrics, its latest months ("Compare electricity in August 2026 and September 2026"), its biggest user ("Main Academic Building electricity trend") and another of its names for an average. Questions in Hindi, Gujarati, Tamil and Punjabi appear only when the file has electricity or water columns, which those phrasings cover. Every suggestion is checked in the tests to be answerable from the file it was written for.
+**Suggested questions follow your file** (`datasaathi/suggest.py`). They are written from the loaded data: its own name column ("Which *block* used the most electricity last month?"), its metrics, its latest months ("Compare electricity in August 2026 and September 2026"), its biggest user ("Main Academic Building electricity trend") and another of its names for an average. Every suggestion is checked in the tests to be answerable from the file it was written for.
 
 ---
 

@@ -87,12 +87,12 @@ def radar_chart(df: pd.DataFrame, card: Card, f: Finding):
     col = metric_color(f.metric)
     fig = go.Figure()
     fig.add_scatter(x=pv.index, y=med[f.entity] * idx, name="Expected from campus pattern", mode="lines",
-                    line=dict(dash="dot", color="#8FA3BF", width=2, shape="spline"), fill="tozeroy", fillcolor="rgba(143,163,191,.06)")
+                    line=dict(dash="dot", color="#88A291", width=2, shape="spline"))
     fig.add_scatter(x=pv.index, y=pv[f.entity], name=f"{f.entity} (actual)", mode="lines+markers",
-                    line=dict(width=3, color=col, shape="spline"), marker=dict(size=7, color="#1E2C50", line=dict(width=2, color=col)))
+                    line=dict(width=2.4, color=col, shape="spline"), marker=dict(size=6, color="#F7FCF8", line=dict(width=2, color=col)))
     fig.add_scatter(x=[f.period], y=[f.observed], mode="markers", showlegend=False, hoverinfo="skip",
-                    marker=dict(size=34, color=rgba("#FF7A8A", .18), line=dict(width=0)))
-    fig.add_scatter(x=[f.period], y=[f.observed], name="Flagged", mode="markers", marker=dict(size=13, color="#FF7A8A", line=dict(width=2, color="#FFFFFF")))
+                    marker=dict(size=26, color=rgba("#C8372D", .14), line=dict(width=0)))
+    fig.add_scatter(x=[f.period], y=[f.observed], name="Flagged", mode="markers", marker=dict(size=11, color="#C8372D", line=dict(width=2, color="#F7FCF8")))
     fig.update_layout(yaxis_title=f"{f.label} ({f.unit})")
     return style(fig, 320)
 

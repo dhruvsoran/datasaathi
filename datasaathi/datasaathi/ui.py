@@ -1,12 +1,14 @@
-"""Visual layer (2.0 "data observatory"): theme CSS and small HTML components, kept out of app.py so the logic stays readable.
+"""Visual layer: theme CSS and small HTML components, kept out of app.py so the logic stays readable.
 Every number shown here is passed in from code (pandas, the engine, Number Guard); components only format it."""
 from __future__ import annotations
 import html
-import math
 from pathlib import Path as _Path
 
-INK, TEAL, VIOLET, AMBER, CORAL, GREEN, BLUE, MUTED = "#EAF2FF", "#2EE6C5", "#8B7CFF", "#FFC24D", "#FF7A8A", "#4BE39A", "#4FB6FF", "#8FA3BF"
+# brand and meaning colours (match theme.css)
+INK, TEAL, VIOLET, AMBER, CORAL, GREEN, BLUE, MUTED = "#1B2E21", "#2E6F40", "#6D4FD8", "#C2740A", "#C8372D", "#2E6F40", "#1F6FA8", "#5A7363"
+FOREST, MINT, SAGE, DEEP = "#2E6F40", "#CFFFDC", "#68BA7F", "#253D2C"      # the "lush forest" palette
 RED = CORAL
+WARN = "#B7791F"
 
 CSS = "<style>" + (_Path(__file__).with_name("theme.css")).read_text(encoding="utf-8") + "</style>"
 
@@ -36,6 +38,7 @@ _ICONS = {
     "receipt": "M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2zM9 8h6M9 12h6",
     "rank": "M4 20V10M10 20V4M16 20v-7M22 20H2",
     "arrow": "M5 12h14M13 6l6 6-6 6",
+    "calendar": "M4 6h16v14H4zM4 10h16M8 3v4M16 3v4",
 }
 
 
@@ -50,7 +53,7 @@ def icon(name: str, cls: str = "") -> str:
 
 
 def trust_color(score: int) -> str:
-    return GREEN if score >= 90 else AMBER if score >= 70 else CORAL
+    return GREEN if score >= 90 else WARN if score >= 70 else CORAL
 
 
 def metric_style(metric: str) -> tuple[str, str]:
@@ -60,23 +63,26 @@ def metric_style(metric: str) -> tuple[str, str]:
         return "drop", BLUE
     if any(k in m for k in ("electric", "kwh", "power", "energy")):
         return "bolt", AMBER
-    return "trend", VIOLET
+    return "trend", FOREST
 
 
-LOGO = ('<svg width="38" height="38" viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="dsg" x1="0" y1="0" x2="1" y2="1">'
-        f'<stop offset="0" stop-color="{TEAL}"/><stop offset=".55" stop-color="{VIOLET}"/><stop offset="1" stop-color="{AMBER}"/></linearGradient></defs>'
-        '<circle cx="20" cy="20" r="17" fill="none" stroke="url(#dsg)" stroke-width="2.5" stroke-dasharray="78 29"/>'
-        '<circle cx="20" cy="20" r="9.5" fill="url(#dsg)"/><circle cx="34.5" cy="12" r="3" fill="#FFC24D"/></svg>')
+LOGO = ('<svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#2E6F40"/>'
+        + "".join(f'<path class="b" d="M{x} 22V{y}" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>' for x, y in ((9, 16), (14, 11), (19, 18), (24, 9)))
+        + '</svg>')
 
 
 # ---------------- sidebar ----------------
 def brand() -> str:
-    return (f'<div class="brand">{LOGO}<div><span class="word">DataSaathi</span></div></div>'
+    return (f'<div class="brand">{LOGO}<span class="word">DataSaathi</span></div>'
             '<div class="brand-sub">Ask your campus data by typing or speaking, in English or Indian languages. Every number comes with proof.</div>')
 
 
 def side_h(ic: str, text: str) -> str:
-    return f'<div class="side-h">{icon(ic)}{e(text)}</div>'
+    return f'<div class="side-h">{e(text)}</div>'
+
+
+def side_status(text: str, ok: bool) -> str:
+    return f'<div class="side-status{"" if ok else " lite"}"><i></i>{e(text)}</div>'
 
 
 def side_foot() -> str:
@@ -84,72 +90,20 @@ def side_foot() -> str:
             'Numbers are computed by pandas and checked by Number Guard.</div>')
 
 
-# ---------------- instruments ----------------
-_C = 2 * math.pi * 52      # ring circumference (r = 52 in a 120 box)
-
-
-def ring(score: int | None, small: bool = False) -> str:
-    """Ring gauge with a liquid fill whose level is the score. `None` means no data loaded: an empty ring and a dash."""
-    size = "1.5rem" if small else "2.2rem"
-    if score is None:
-        return (f'<div class="ring nodata{" sm" if small else ""}" style="--fs:{size}"><svg viewBox="0 0 120 120">'
-                '<circle class="track" cx="60" cy="60" r="52"/><circle class="ticks" cx="60" cy="60" r="40"/></svg>'
-                '<div class="num"><b>—</b><small>no data</small></div></div>')
-    col = trust_color(score)
-    off = _C * (1 - max(0, min(100, score)) / 100)
-    return (f'<div class="ring{" sm" if small else ""}" style="--fs:{size};--lc:{col};--lvl:{max(0, min(100, score))}%">'
-            '<div class="liquid"><i></i><i></i></div><svg viewBox="0 0 120 120">'
-            '<circle class="track" cx="60" cy="60" r="52"/><circle class="ticks" cx="60" cy="60" r="40"/>'
-            f'<circle class="val" cx="60" cy="60" r="52" stroke="{col}" style="color:{col};stroke-dasharray:{_C:.2f};stroke-dashoffset:{off:.2f}"/></svg>'
-            f'<div class="num"><b style="color:{col}"><span class="cnt" style="--to:{score}">{score}</span></b><small>/ 100</small></div></div>')
-
-
-def scope(findings, large: bool = False) -> str:
-    """Radar scope: a rotating sweep with one blip per Waste Radar finding (angle spread evenly, distance grows with the % excess).
-    `None` means no data loaded: an idle scope with a dash."""
-    if findings is None:
-        return f'<div class="scope idle{" lg" if large else ""}"><div class="sweep"></div><div class="count" style="color:#8395B4">—</div></div>'
-    blips = []
-    for i, f in enumerate(findings):
-        ang = math.radians(i * 137.5 + 35)
-        rf = 0.32 + 0.55 * min(1.0, abs(f.excess_pct) / 120)
-        x, y = 50 + 50 * rf * math.cos(ang), 50 + 50 * rf * math.sin(ang)
-        blips.append(f'<i class="blip {f.kind}" style="left:{x:.1f}%;top:{y:.1f}%;--bd:{i * .45:.2f}s"></i>')
-    n = len(findings)
-    col = CORAL if n else GREEN
-    return (f'<div class="scope{" lg" if large else ""}"><div class="sweep"></div>{"".join(blips)}'
-            f'<div class="count" style="color:{col};--fs:{"2.8rem" if large else "2rem"}"><span class="cnt" style="--to:{n}">{n}</span></div></div>')
-
-
-def sparkline(values, color: str, uid: str, w: int = 128, h: int = 46) -> str:
+# ---------------- page header + stat cards ----------------
+def sparkline(values, color: str, uid: str, w: int = 96, h: int = 32) -> str:
     v = [float(x) for x in values]
     if len(v) < 2:
         return ""
     lo, hi = min(v), max(v)
     span = (hi - lo) or 1.0
-    pts = [(4 + i * (w - 8) / (len(v) - 1), h - 5 - (x - lo) / span * (h - 10)) for i, x in enumerate(v)]
+    pts = [(2 + i * (w - 4) / (len(v) - 1), h - 3 - (x - lo) / span * (h - 6)) for i, x in enumerate(v)]
     line = "M" + " L".join(f"{x:.1f},{y:.1f}" for x, y in pts)
     area = line + f" L{pts[-1][0]:.1f},{h} L{pts[0][0]:.1f},{h} Z"
     lx, ly = pts[-1]
     return (f'<svg class="spark" viewBox="0 0 {w} {h}" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="{uid}" x1="0" y1="0" x2="0" y2="1">'
-            f'<stop offset="0" stop-color="{color}" stop-opacity=".35"/><stop offset="1" stop-color="{color}" stop-opacity="0"/></linearGradient></defs>'
-            f'<path d="{area}" fill="url(#{uid})"/><path class="l" d="{line}"/><circle cx="{lx:.1f}" cy="{ly:.1f}" r="3.2"/></svg>')
-
-
-GOO = ('<svg class="goo-defs" width="0" height="0" aria-hidden="true"><defs>'
-       '<filter id="goo"><feGaussianBlur in="SourceGraphic" stdDeviation="14" result="b"/>'
-       '<feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -9"/></filter>'
-       '<filter id="goo-sm"><feGaussianBlur in="SourceGraphic" stdDeviation="4" result="b"/>'
-       '<feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"/></filter></defs></svg>')
-BLOBS = '<div class="blobs" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i></div>'
-
-
-def waves(cls: str = "") -> str:
-    """Two slow liquid waves for the bottom edge of a panel (each path is two periods wide and slides half its width)."""
-    back = "M0,60 C150,100 350,20 600,60 C850,100 1050,20 1200,60 C1350,100 1550,20 1800,60 C2050,100 2250,20 2400,60 L2400,120 L0,120 Z"
-    front = "M0,75 C200,40 400,110 600,75 C800,40 1000,110 1200,75 C1400,40 1600,110 1800,75 C2000,40 2200,110 2400,75 L2400,120 L0,120 Z"
-    return (f'<svg class="waves back {cls}" viewBox="0 0 2400 120" preserveAspectRatio="none" aria-hidden="true"><path d="{back}"/></svg>'
-            f'<svg class="waves front {cls}" viewBox="0 0 2400 120" preserveAspectRatio="none" aria-hidden="true"><path d="{front}"/></svg>')
+            f'<stop offset="0" stop-color="{color}" stop-opacity=".22"/><stop offset="1" stop-color="{color}" stop-opacity="0"/></linearGradient></defs>'
+            f'<path d="{area}" fill="url(#{uid})"/><path class="l" d="{line}" pathLength="100"/><circle cx="{lx:.1f}" cy="{ly:.1f}" r="2.6"/></svg>')
 
 
 def kpi_tile(k: dict, j: int) -> str:
@@ -160,40 +114,57 @@ def kpi_tile(k: dict, j: int) -> str:
         dl = ""
     else:
         cls = "flat" if abs(d) < 0.5 else "up" if d > 0 else "down"
-        dl = f'<span class="delta {cls}">{"▲" if d > 0 else "▼" if d < 0 else "•"} {abs(d):.1f}%</span>'
-    return (f'<div class="glass kpi" style="--i:{3 + j};--c:{col}"><div class="k">{icon(ic)}{e(k["label"])} · campus total</div>'
-            f'<div class="v">{k["value"]:,.0f}<small>{e(k["unit"])}</small></div>{sparkline(k["series"], col, f"sp{j}")}'
-            f'<div class="sub">{e(k["month"])} {dl}<span>vs previous month</span></div>{waves("tint")}</div>')
+        dl = f'<span class="delta {cls}">{"▲" if d > 0 else "▼" if d < 0 else "•"} {abs(d):.1f}%</span><span>vs previous month</span>'
+    return (f'<div class="card stat kpi" style="--i:{2 + j};--c:{col}" title="Sum over every {e(k["label"].lower())} reading in {e(k["month"])}">'
+            f'<div class="sh"><span class="lb">{icon(ic)}{e(k["label"])} total</span><span class="when">{e(k["month"])}</span></div>'
+            f'<div class="sv"><b>{k["value"]:,.0f}</b><small>{e(k["unit"])}</small></div>'
+            f'{sparkline(k["series"], col, f"sp{j}", w=200, h=30)}<div class="kf">{dl}</div></div>')
+
+
+_KINDS = [("held_load", CORAL, "Held full load"), ("spike", AMBER, "Spike"), ("drop", BLUE, "Unusual drop")]
 
 
 def hero(card_name: str, synthetic: bool, period: str, trust: int, findings, mode: str, mode_ok: bool,
          kpis: list | None = None, animate: bool = True, delay: float = 0.0) -> str:
-    """Command deck: title, Data Trust ring gauge, Waste Radar scope and a KPI strip with sparklines."""
-    syn = (f'<span class="chip syn">{icon("flask")}Synthetic demo data</span>' if synthetic else
-           "" if trust is None else f'<span class="chip info">{icon("db")}Your data</span>')
-    mchip = f'<span class="chip {"ok" if mode_ok else "lite"}"><span class="orb{"" if mode_ok else " off"}"></span>{e(mode)}</span>'
-    n = len(findings) if findings is not None else 0
-    if findings is None:
-        radar_note = "Waiting for a file. Every building is checked once data is loaded."
-    elif n:
-        radar_note = f"{n} unusual reading{'s' if n != 1 else ''} found by statistics. See the Waste Radar tab."
+    """Page header (title, description, dataset line) and one row of stat cards: Data Trust, Waste Radar, one per metric."""
+    meta = [f'<span>{icon("layers")}{e(card_name)}</span>', f'<span>{icon("calendar")}{e(period)}</span>']
+    if synthetic:
+        meta.append(f'<span>{icon("flask")}Synthetic demo data</span>')
+    elif trust is not None:
+        meta.append(f'<span>{icon("db")}Your data</span>')
+    meta.append(f'<span><i class="dot{"" if mode_ok else " off"}"></i>{e(mode)}</span>')
+    head = ('<div class="phead"><div class="ttl"><div class="over">Community data assistant</div>'
+            '<h1>Ask your data. <span class="hl">Get answers you can check.</span></h1>'
+            '<p>Gemma 4 understands the question, code does the maths, and every answer comes with the code, the rows and a proof receipt.</p>'
+            f'<div class="meta-line">{"".join(meta)}</div></div></div>')
+
+    open_t = f'<span class="open"><span>Open</span>{icon("arrow")}</span>'
+    if trust is None:
+        tv, tbar, tnote = '<b>—</b><small>no data</small>', "", "Waiting for a file. The score is computed from the data itself."
     else:
-        radar_note = "Nothing unusual found in this data."
-    trust_note = "Waiting for a file. The score is computed from the data itself." if trust is None else "Live check of this file: gaps, duplicates, odd values"
-    title = (f'<div class="glass title" style="--i:0">{GOO}{BLOBS}{waves()}<div class="eyebrow"><i></i>Community data observatory</div>'
-             '<h1>Ask your data.<br><span class="grad">Get answers you can check.</span></h1>'
-             '<p>Gemma 4 understands the question. Code does the maths. Every answer ships with the code, the rows and a proof receipt.</p>'
-             f'<div class="chips"><span class="chip info">{icon("layers")}{e(card_name)}</span>'
-             f'<span class="chip info">{icon("history")}{e(period)}</span>{syn}{mchip}</div></div>')
-    gauge = ('<div class="glass inst go" data-goto="Data Trust" role="button" tabindex="0" style="--i:1" title="Open the Data Trust tab: '
-             f'completeness, month gaps, duplicates, impossible values and likely typos, computed from the loaded file."><div class="k">Data trust</div>{ring(trust)}'
-             f'<div class="s">{trust_note}</div><div class="open">Open Data Trust {icon("arrow")}</div></div>')
-    radar = ('<div class="glass inst go" data-goto="Waste Radar" role="button" tabindex="0" style="--i:2" title="Open the Waste Radar tab: every building '
-             'checked against its own history and the campus-wide pattern.">'
-             f'<div class="k">Waste radar</div>{scope(findings)}'
-             f'<div class="s">{radar_note}</div><div class="open">Open Waste Radar {icon("arrow")}</div></div>')
-    strip = f'<div class="kpis">{"".join(kpi_tile(k, j) for j, k in enumerate(kpis or []))}</div>' if kpis else ""
-    return f'<div class="deck{"" if animate else " still"}" style="--d0:{delay}s">{title}{gauge}{radar}{strip}</div>'
+        col = trust_color(trust)
+        tv = f'<b style="color:{col}"><span class="cnt" style="--to:{trust}">{trust}</span></b><small>/ 100</small>'
+        tbar = f'<div class="meter"><i style="width:{max(0, min(100, trust))}%;background:{col}"></i></div>'
+        tnote = "Gaps, duplicates and odd values in this file"
+    gauge = (f'<div class="card stat go{" nodata" if trust is None else ""}" data-goto="Data Trust" role="button" tabindex="0" style="--i:0;--c:{GREEN}" '
+             'title="Open the Data Trust tab: completeness, month gaps, duplicates, impossible values and likely typos, computed from the loaded file.">'
+             f'<div class="sh"><span class="lb">{icon("shield")}Data trust</span>{open_t}</div><div class="sv">{tv}</div>{tbar}<div class="ss">{tnote}</div></div>')
+
+    if findings is None:
+        rv, kinds, rnote = '<b>—</b><small>no data</small>', "", "Waiting for a file. Every building is checked once data is loaded."
+    else:
+        n = len(findings)
+        rv = f'<b><span class="cnt" style="--to:{n}">{n}</span></b><small>unusual reading{"s" if n != 1 else ""}</small>'
+        kinds = "".join(f'<span><i style="background:{c}"></i>{sum(f.kind == k for f in findings)} {e(t.lower())}</span>'
+                        for k, c, t in _KINDS if any(f.kind == k for f in findings))
+        kinds = f'<div class="kinds">{kinds}</div>' if kinds else ""
+        rnote = "Found by statistics, explained in the Waste Radar tab" if n else "Nothing unusual found in this data"
+    radar = (f'<div class="card stat go{" nodata" if findings is None else ""}" data-goto="Waste Radar" role="button" tabindex="0" style="--i:1;--c:{CORAL}" '
+             'title="Open the Waste Radar tab: every building checked against its own history and the campus-wide pattern.">'
+             f'<div class="sh"><span class="lb">{icon("radar")}Waste radar</span>{open_t}</div><div class="sv">{rv}</div>{kinds}<div class="ss">{rnote}</div></div>')
+
+    tiles = "".join(kpi_tile(k, j) for j, k in enumerate(kpis or []))
+    return f'<div class="deck{"" if animate else " still"}" style="--d0:{delay}s">{head}<div class="stats">{gauge}{radar}{tiles}</div></div>'
 
 
 # ---------------- Ask ----------------
@@ -212,32 +183,24 @@ def question(q: str, voice: bool = False) -> str:
             f'<div class="l">{label}</div><div class="q">{e(q)}</div></div></div>')
 
 
-def _seal(kind: str) -> str:
-    words, cls, ic = {"ok": ("NUMBER GUARD · VERIFIED · ", "", "check"), "code": ("COMPUTED · IN · CODE · ", "", "check"),
-                      "warn": ("VERIFIED TEXT · SHOWN · ", "warn", "shield"), "no": ("NO GUESS · REFUSED · ", "no", "x")}[kind]
-    pid = f"sealp-{kind}"
-    return (f'<div class="seal {cls}" aria-hidden="true"><svg class="rim" viewBox="0 0 100 100"><defs>'
-            f'<path id="{pid}" d="M50,50 m-38,0 a38,38 0 1,1 76,0 a38,38 0 1,1 -76,0"/></defs>'
-            f'<text><textPath href="#{pid}">{words}</textPath></text></svg><div class="core">{icon(ic)}</div></div>')
-
-
 def answer_box(text: str, refused: bool, guard_ok, n_verified: int, planner: str, trust: int | None, fresh: bool = False) -> str:
-    chips = []
     if refused:
-        chips.append(f'<span class="chip bad">{icon("x")}Not answerable from this data</span>')
+        title, badge = f'{icon("x")}Refused · no guess made', f'<span class="badge bad">{icon("x")}Not answerable from this data</span>'
     else:
+        title = f'{icon("spark")}Answer'
         if guard_ok is True:
-            chips.append(f'<span class="chip ok">{icon("shield")}Numbers verified ({n_verified})</span>')
+            badge = f'<span class="badge ok">{icon("shield")}Numbers verified ({n_verified})</span>'
         elif guard_ok is False:
-            chips.append(f'<span class="chip lite">{icon("alert")}Model wording replaced by verified text</span>')
-        if trust is not None:
-            chips.append(f'<span class="chip {"ok" if trust >= 90 else "lite" if trust >= 70 else "bad"}">{icon("db")}Data trust {trust}/100</span>')
-    chips.append(f'<span class="chip info">{icon("cpu")}Planner: {e(planner)}</span>')
-    seal = _seal("no" if refused else "ok" if guard_ok is True else "warn" if guard_ok is False else "code")
-    head = f'{icon("x")}Refused · no guess made' if refused else f'{icon("spark")}Answer'
+            badge = f'<span class="badge warn">{icon("alert")}Model wording replaced by verified text</span>'
+        else:
+            badge = f'<span class="badge neutral">{icon("check")}Computed in code</span>'
+    meta = []
+    if trust is not None and not refused:
+        meta.append(f'<span>{icon("db")}Data trust {trust}/100</span>')
+    meta.append(f'<span>{icon("cpu")}Planner: {e(planner)}</span>')
     cls = "answer" + (" refused" if refused else "") + (" fx" if fresh else "")
-    return (f'<div class="{cls}" style="--i:1">{seal}<div class="hd">{head}</div><div class="t">{e(text)}</div>'
-            f'<div class="meta">{"".join(chips)}</div></div>')
+    return (f'<div class="{cls}" style="--i:1"><div class="hd"><span class="ah">{title}</span>{badge}</div>'
+            f'<div class="t">{e(text)}</div><div class="meta">{"".join(meta)}</div></div>')
 
 
 def callout(text: str, kind: str = "warn", idx: int = 0, fresh: bool = False) -> str:
@@ -246,12 +209,12 @@ def callout(text: str, kind: str = "warn", idx: int = 0, fresh: bool = False) ->
 
 
 def rows_used(n: int, cols: str) -> str:
-    return f'<div class="rows-used">{icon("table")}Based on {n} rows of the dataset · columns: {e(cols)} · full rows in the proof receipt below</div>'
+    return f'<div class="rows-used">{icon("table")}Based on {n} rows · columns: {e(cols)} · full rows in the proof receipt below</div>'
 
 
 def bignum(label: str, unit: str, value: float, metric: str) -> str:
     ic, col = metric_style(metric)
-    return (f'<div class="glass bignum" style="--c:{col}"><div class="ico">{icon(ic)}</div><div><div class="k">{e(label)}</div>'
+    return (f'<div class="card bignum" style="--c:{col}"><div class="ico">{icon(ic)}</div><div><div class="k">{e(label)}</div>'
             f'<div class="v">{value:,.0f}<small>{e(unit)}</small></div></div></div>')
 
 
@@ -265,9 +228,10 @@ def receipt(a, fresh: bool = False) -> str:
     p = a.plan
     plan_bits = ", ".join(f"{key}={val}" for key, val in p.model_dump(exclude_none=True).items() if key not in ("top_n",) or p.intent == "rank")
     refused = r is None
-    stamp = '<div class="stamp no">REFUSED</div>' if refused else ('<div class="stamp">VERIFIED</div>' if g is None or g.ok else '<div class="stamp no">REPLACED</div>')
-    out = [f'<div class="receipt{" print" if fresh else ""}">{stamp}<h4>DATASAATHI · PROOF RECEIPT</h4><div class="sub">COMPUTED IN CODE · CHECKABLE</div><div class="rule"></div>',
-           row("Question", a.question), row("Planner", a.planner), row("Plan", plan_bits), '<div class="rule"></div>']
+    badge = ('<span class="badge bad">Refused</span>' if refused else
+             '<span class="badge ok">Verified</span>' if g is None or g.ok else '<span class="badge warn">Model text replaced</span>')
+    out = [f'<div class="receipt{" fx" if fresh else ""}"><div class="rh"><div><h4>Proof receipt</h4><div class="sub">Computed in code · checkable</div></div>{badge}</div>'
+           '<div class="rule"></div>', row("Question", a.question), row("Planner", a.planner), row("Plan", plan_bits), '<div class="rule"></div>']
     if r is not None:
         out += [row("Rows used", len(r.used)), row("Result rows", len(r.table)), row("Explained by", a.explainer)]
         if g is not None:
@@ -280,8 +244,7 @@ def receipt(a, fresh: bool = False) -> str:
             out.append(row("Assumption", n))
     else:
         out += [row("Outcome", "REFUSED (no guess made)", "fail")]
-    out.append('<div class="rule"></div>' + row("Code and rows below", "✓ checkable"))
-    out.append('<div class="barcode"></div></div>')
+    out.append('<div class="rule"></div>' + row("Code and rows", "below ✓") + '</div>')
     return "".join(out)
 
 
@@ -298,18 +261,17 @@ def pipeline_trace(a, fresh: bool = False) -> str:
     mark = {"ok": "✓", "stop": "✕", "skip": "–"}
     out = []
     for i, (name, detail, st_) in enumerate(steps):
-        out.append(f'<div class="node {st_}" style="--i:{i}"><span class="dot">{mark[st_]}</span><b>{e(name)}</b><small>{e(detail)}</small></div>')
+        out.append(f'<div class="node {st_}" style="--i:{i}"><span class="dot">{mark[st_]}</span><div><b>{e(name)}</b><small>{e(detail)}</small></div></div>')
         if i < len(steps) - 1:
             out.append(f'<span class="link" style="--i:{i}"></span>')
-    return f'<div class="pipe{" fx" if fresh else ""}">{"".join(out)}</div>'
+    return f'<div class="pipe{" fx" if fresh else ""}" style="--i:2">{"".join(out)}</div>'
 
 
 def thinking() -> str:
     labels = ["Understanding your question", "Checking it against the Data Card", "Calculating with code",
               "Verifying every number", "Writing the proof receipt"]
     steps = "".join(f'<div class="s" style="--d:{i}s">{i + 1}. {e(t)}</div>' for i, t in enumerate(labels))
-    return (f'<div class="glass think">{GOO}<div class="core"><i></i><i></i><i></i></div><div class="steps">{steps}</div>'
-            '<span class="drops" aria-hidden="true"><i></i><i></i><i></i></span></div>')
+    return f'<div class="card think"><div class="spin"></div><div class="steps">{steps}</div><i class="bar"></i></div>'
 
 
 def scroll_script(selector: str, block: str = "start", nonce: int = 0) -> str:
@@ -325,8 +287,15 @@ def scroll_script(selector: str, block: str = "start", nonce: int = 0) -> str:
 def goto_script() -> str:
     """Installed once per page in a hidden iframe: a click (or Enter / Space) on an element with data-goto="Tab name" opens that tab
     and brings the tab bar to the top. The bar is re-checked a few times because the newly shown tab can still be drawing (charts)
-    and push the page while it scrolls. Fixed text from our code; it only reads the page and clicks the tab button."""
-    return ("<script>(function(){const w=window.parent,d=w.document;if(w.__dsGoto)return;w.__dsGoto=true;"
+    and push the page while it scrolls. Fixed text from our code; it only reads the page, clicks the tab button and sets
+    html[data-scrolling] while the page is being scrolled."""
+    # The handlers belong to this iframe: if Streamlit removed the iframe (the upload screen without a file stops the page early),
+    # they stop running, so a new iframe installs them again unless the one that installed them is still alive.
+    # While the page scrolls, html[data-scrolling] pauses the purely decorative loops so scrolling stays smooth.
+    return ("<script>(function(){const w=window.parent,d=w.document;if(w.__dsGoto&&!w.__dsGoto.closed)return;w.__dsGoto=window;"
+            "let st=null;d.addEventListener('scroll',function(e){if(!e.target||e.target.getAttribute===undefined||"
+            "e.target.getAttribute('data-testid')!=='stMain')return;d.documentElement.dataset.scrolling='1';clearTimeout(st);"
+            "st=setTimeout(function(){delete d.documentElement.dataset.scrolling;},180);},{capture:true,passive:true});"
             "function scroller(){return d.querySelector('[data-testid=stMain]')||d.scrollingElement;}"
             "function go(card){const name=card.getAttribute('data-goto');"
             "const tab=[...d.querySelectorAll('[role=tab]')].find(function(t){return t.innerText.indexOf(name)>-1;});"
@@ -346,33 +315,27 @@ def lang_label() -> str:
 
 
 def listening() -> str:
-    return (f'<div class="glass think listen"><div class="core"><i></i><i></i><i></i></div><div class="steps">'
-            f'<div class="lt">{icon("mic")}Listening to your recording…</div>'
-            '<div class="ls">Turning your voice into text on this computer. The first time also loads the speech model.</div></div></div>')
-
-
-def voice_head() -> str:
-    bars = "".join(f'<i style="animation-delay:{i * .12:.2f}s"></i>' for i in range(9))
-    return (f'<div class="vhead"><div class="mic">{icon("mic")}</div><div class="eq">{bars}</div>'
-            '<div class="tx"><b>Speak your question</b><span>Press the mic, speak, press stop. Then check the text and press Send.</span></div></div>')
+    bars = "".join(f'<i style="animation-delay:{i * .11:.2f}s"></i>' for i in range(7))
+    return (f'<div class="card think listen"><div class="eq">{bars}</div><div class="steps">'
+            '<div class="lt">Listening to your recording…</div>'
+            '<div class="ls">Turning your voice into text on this computer. The first time also loads the speech model.</div></div><i class="bar"></i></div>')
 
 
 # ---------------- Waste Radar ----------------
 def radar_summary(findings, excess_text: str) -> str:
     n = len(findings)
-    kinds = [("held_load", CORAL, "Held full load"), ("spike", AMBER, "Spike"), ("drop", BLUE, "Unusual drop")]
-    legend = "".join(f'<span><i style="background:{c};box-shadow:0 0 8px {c}"></i>{e(t)} · {sum(f.kind == k for f in findings)}</span>' for k, c, t in kinds)
+    legend = "".join(f'<span><i style="background:{c}"></i>{e(t)} · {sum(f.kind == k for f in findings)}</span>' for k, c, t in _KINDS)
     sub = f"Estimated excess flagged: {e(excess_text)}." if excess_text else "Readings below expectation are listed for checking."
-    return (f'<div class="glass radar-top">{waves()}{scope(findings, large=True)}<div class="txt"><div class="big">{n} unusual reading{"s" if n != 1 else ""} on the scope</div>'
-            f'<div style="color:#B9C7DD;line-height:1.5">{sub}</div><div class="legend">{legend}</div></div></div>')
+    return (f'<div class="card radar-top"><div class="rc{" live" if n else ""}"><b>{n}</b><span>unusual reading{"s" if n != 1 else ""}</span></div>'
+            f'<div class="txt"><div class="big">What the radar found</div><div class="sub2">{sub}</div><div class="legend">{legend}</div></div></div>')
 
 
 def finding_card(f, text: str, by: str, idx: int = 0) -> str:
-    kind = {"held_load": ("bad", "Held full load"), "spike": ("lite", "Spike"), "drop": ("info", "Unusual drop")}[f.kind]
+    kind = {"held_load": ("bad", "Held full load"), "spike": ("warn", "Spike"), "drop": ("info", "Unusual drop")}[f.kind]
     top = max(f.observed, f.expected) or 1.0
     bars = (f'<span>Actual</span><div class="tr"><i style="width:{f.observed / top * 100:.1f}%;background:var(--c)"></i></div><span class="num">{f.observed:,.0f} {e(f.unit)}</span>'
-            f'<span>Expected</span><div class="tr"><i style="width:{f.expected / top * 100:.1f}%;background:rgba(255,255,255,.35)"></i></div><span class="num">{f.expected:,.0f} {e(f.unit)}</span>')
-    return (f'<div class="finding {f.kind} fx" style="--i:{idx}"><div class="h"><span class="chip {kind[0]}">{kind[1]}</span><span class="ent">{e(f.entity)}</span>'
+            f'<span>Expected</span><div class="tr"><i style="width:{f.expected / top * 100:.1f}%;background:#A9C9B2"></i></div><span class="num">{f.expected:,.0f} {e(f.unit)}</span>')
+    return (f'<div class="card finding {f.kind} fx" style="--i:{idx}"><div class="h"><span class="badge {kind[0]}">{kind[1]}</span><span class="ent">{e(f.entity)}</span>'
             f'<span class="when">{e(f.label)} · {e(f.period)}</span><span class="pct">{f.excess_pct:+.0f}%</span></div>'
             f'<p class="p">{e(text)}</p><div class="bars">{bars}</div><div class="by">Explained by {e(by)}</div></div>')
 
@@ -380,21 +343,23 @@ def finding_card(f, text: str, by: str, idx: int = 0) -> str:
 # ---------------- Data Trust ----------------
 def trust_bars(table) -> str:
     cards = []
-    for _, r in table.iterrows():
+    for j, (_, r) in enumerate(table.iterrows()):
         sc = int(r["trust_score"])
-        cards.append(f'<div class="glass tcard">{ring(sc, small=True)}<div><div class="n">{e(r["metric"])}</div><div class="st">'
+        col = trust_color(sc)
+        cards.append(f'<div class="card tcard" style="--i:{j}"><div class="n"><span>{e(r["metric"])}</span><b style="color:{col}">{sc}<small>/100</small></b></div>'
+                     f'<div class="meter"><i style="width:{max(0, min(100, sc))}%;background:{col}"></i></div><div class="st">'
                      f'<span>Complete</span><b>{r["completeness_%"]}%</b><span>Duplicates</span><b>{int(r["duplicates"])}</b>'
-                     f'<span>Negatives</span><b>{int(r["negatives"])}</b><span>Suspect</span><b>{int(r["suspect_values"])}</b></div></div></div>')
+                     f'<span>Negatives</span><b>{int(r["negatives"])}</b><span>Suspect</span><b>{int(r["suspect_values"])}</b></div></div>')
     return f'<div class="trust-grid">{"".join(cards)}</div>'
 
 
-def issue_row(sev: str, msg: str) -> str:
-    chip = {"high": ("bad", "Fix"), "medium": ("lite", "Check"), "info": ("info", "Note")}[sev]
-    return f'<div class="issue {sev}"><span class="chip {chip[0]}">{chip[1]}</span><span>{e(msg)}</span></div>'
+def issue_row(sev: str, msg: str, i: int = 0) -> str:
+    chip = {"high": ("bad", "Fix"), "medium": ("warn", "Check"), "info": ("info", "Note")}[sev]
+    return f'<div class="issue {sev}" style="--i:{i}"><span class="badge {chip[0]}">{chip[1]}</span><span>{e(msg)}</span></div>'
 
 
 def issues(rows) -> str:
-    return f'<div class="tl">{"".join(issue_row(s, m) for s, m in rows)}</div>'
+    return f'<div class="card issue-list">{"".join(issue_row(s, m, i) for i, (s, m) in enumerate(rows))}</div>'
 
 
 def card_sheet(card) -> str:
@@ -402,14 +367,14 @@ def card_sheet(card) -> str:
     items = [("Name", card.name), ("Source", card.source), ("Period", card.period), ("Entity column", card.entity_column),
              ("Time column", card.time_column), ("Metrics", metrics), ("Not in this dataset", ", ".join(card.not_available) or "—"),
              ("Notes", card.notes or "—"), ("Synthetic", "Yes, demo data" if card.synthetic else "No")]
-    return '<div class="glass sheet">' + "".join(f'<div><div class="k">{e(k)}</div><div class="v">{e(v)}</div></div>' for k, v in items) + '</div>'
+    return '<div class="sheet">' + "".join(f'<div><div class="k">{e(k)}</div><div class="v">{e(v)}</div></div>' for k, v in items) + '</div>'
 
 
 # ---------------- History ----------------
 def history_list(sess) -> str:
-    rows = [f'<div class="it"><span class="ix">{i + 1:02d}</span><span class="d{" no" if a.status == "refused" else ""}"></span>'
+    rows = [f'<div class="it" style="--i:{i}"><span class="ix">{i + 1:02d}</span><span class="d{" no" if a.status == "refused" else ""}"></span>'
             f'<span class="qq">{e(a.question)}</span><span class="pl">{e(a.planner)}</span></div>' for i, a in enumerate(sess)]
-    return f'<div class="hist">{"".join(rows)}</div>'
+    return f'<div class="card hist">{"".join(rows)}</div>'
 
 
 # ---------------- misc ----------------
@@ -429,10 +394,8 @@ def intro(nonce: int = 0) -> str:
     tag = "section" if nonce % 2 else "div"
     return f'<{tag} class="intro" aria-hidden="true">' + """
   <div class="stage">
-    <div class="orbit"></div><div class="orbit o2"></div>
-    <div class="welcome"><div class="w1">Welcome to DataSaathi</div><div class="w2 grad">Ask your data. Trust the answer.</div></div>
+    <div class="welcome"><div class="w1">Welcome to DataSaathi</div><div class="w2">Ask your data. Trust the answer.</div></div>
   </div>
   <div class="curtain l"><div class="big">HACKTOBER</div><div class="rule"></div><div class="sub">Hackday@Meerut</div><div class="sub2">2026</div></div>
   <div class="curtain r"><div class="big">FEST</div><div class="rule"></div><div class="sub">&times; E-Cell IIMTU</div><div class="sub2">PS 03 &middot; Gemma 4</div></div>
-  <div class="rod"></div>
 """ + f"</{tag}>"
