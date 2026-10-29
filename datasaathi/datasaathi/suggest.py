@@ -6,14 +6,6 @@ from .card import Card
 
 UNIT_WORDS = {"kwh", "mwh", "kw", "kl", "l", "m3", "kg", "t", "units", "litres", "liters", "tonnes", "rs", "inr"}
 USAGE_WORDS = ("electric", "power", "energy", "kwh", "water", "gas", "fuel", "diesel")
-# Indian-language questions the planners understand; only offered when the data has that kind of metric
-NATIVE = {
-    "electric": ["पिछले महीने सबसे ज्यादा बिजली किस बिल्डिंग ने इस्तेमाल की?",
-                 "ગયા મહિને સૌથી વધુ વીજળી કઈ બિલ્ડિંગે વાપરી?",
-                 "கடந்த மாதம் அதிக மின்சாரம் பயன்படுத்திய கட்டிடம் எது?",
-                 "ਪਿਛਲੇ ਮਹੀਨੇ ਸਭ ਤੋਂ ਵੱਧ ਬਿਜਲੀ ਕਿਹੜੀ ਇਮਾਰਤ ਨੇ ਵਰਤੀ?"],
-    "water": ["पिछले महीने सबसे ज्यादा पानी किसने इस्तेमाल किया?"],
-}
 
 
 def metric_label(card: Card, m: str) -> str:
@@ -37,11 +29,6 @@ def month_name(ym: str) -> str:
         return pd.Timestamp(f"{ym}-01").strftime("%B %Y")
     except (ValueError, TypeError):
         return str(ym)
-
-
-def _kind(card: Card, m: str) -> str | None:
-    s = f"{m} {card.metrics.get(m, {}).get('label', '')}".lower()
-    return "water" if "water" in s else "electric" if any(k in s for k in ("electric", "kwh", "power", "energy")) else None
 
 
 def suggestions(df: pd.DataFrame, card: Card) -> dict[str, list[str]]:
@@ -75,9 +62,5 @@ def suggestions(df: pd.DataFrame, card: Card) -> dict[str, list[str]]:
     if len(names) > 1:
         trends.append(f"Average monthly {l1} of {names[1]}")
 
-    native: list[str] = []
-    for kind in dict.fromkeys(k for k in (_kind(card, m) for m in metrics) if k):
-        native += NATIVE[kind]
-
-    groups = {"Rank and compare": rank, "Trends and totals": trends, "In your language": native}
+    groups = {"Rank and compare": rank, "Trends and totals": trends}
     return {k: v for k, v in groups.items() if v}
