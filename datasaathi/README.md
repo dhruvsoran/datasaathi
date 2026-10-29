@@ -10,7 +10,7 @@
 Hacktoberfest Hackday 2026 · PS 03 *Community and Environmental Data Intelligence* · Track 1 *Best Use of Gemma 4*
 Built by Dhruv Soran, IIMT University, Meerut
 
-![DataSaathi home screen: page header, Data Trust and Waste Radar cards and campus totals with trend lines](docs/screenshots/home.jpg)
+![DataSaathi home screen: page header, Data Trust and Waste Radar cards and campus totals with trend lines](docs/screenshots/pro/home.jpg)
 
 DataSaathi lets anyone ask questions about campus electricity and water data by **typing or speaking**, in **English or nine Indian languages** (Hindi, Gujarati, Tamil, Punjabi, Marathi, Bengali, Telugu, Kannada, Malayalam).
 
@@ -157,17 +157,17 @@ All captured from the running app with Gemma 4 (`gemma4:e4b`) connected, on the 
 
 | Answer: verified badge, five-step trace and chart | Proof Receipt, the code that ran and the rows used |
 |---|---|
-| ![Answer card with the Numbers verified badge, pipeline trace and ranking chart](docs/screenshots/ask-answer.jpg) | ![Proof receipt with the Verified badge, code and rows](docs/screenshots/receipt.jpg) |
+| ![Answer card with the Numbers verified badge, pipeline trace and ranking chart](docs/screenshots/pro/ask-answer.jpg) | ![Proof receipt with the Verified badge, code and rows](docs/screenshots/pro/receipt.jpg) |
 | **Refusal: no headcount in the data, so no guess** | **Voice note: tap the mic, speak, ✓ to send, replay it** |
-| ![Refused answer with the red edge and a Refused receipt](docs/screenshots/refusal.jpg) | ![Voice note bubble with a player under the question, and the answer](docs/screenshots/voice.jpg) |
+| ![Refused answer with the red edge and a Refused receipt](docs/screenshots/pro/refusal.jpg) | ![Voice note bubble with a player under the question, and the answer](docs/screenshots/pro/voice.jpg) |
 | **Waste Radar: problems nobody asked about** | **Data Trust: how reliable the file is** |
-| ![Summary card and an incident card, actual against expected](docs/screenshots/waste-radar.jpg) | ![Score and meter per metric and the list of issues](docs/screenshots/data-trust.jpg) |
+| ![Summary card and an incident card, actual against expected](docs/screenshots/pro/waste-radar.jpg) | ![Score and meter per metric and the list of issues](docs/screenshots/pro/data-trust.jpg) |
 | **History: every question this session** | **Welcome curtain (plays once, `?intro=0` skips it)** |
-| ![Question list with answered and refused dots](docs/screenshots/history.jpg) | ![HACKTOBER FEST curtain](docs/screenshots/intro.jpg) |
+| ![Question list with answered and refused dots](docs/screenshots/pro/history.jpg) | ![HACKTOBER FEST curtain](docs/screenshots/pro/intro.jpg) |
 
 On a phone the stat cards sit two to a row and the sidebar starts closed:
 
-<img src="docs/screenshots/mobile.jpg" alt="Phone layout of the home screen" width="300">
+<img src="docs/screenshots/pro/mobile.jpg" alt="Phone layout of the home screen" width="300">
 
 Motion does not show in stills: the Data Trust score and Waste Radar count count up, meters fill, trend lines draw themselves, answers build step by step, and live dots pulse.
 
